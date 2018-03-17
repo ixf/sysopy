@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "sort.h"
+#include "generate.h"
+
 
 int main(int argc, char** argv){
 
@@ -31,27 +34,27 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  source = argv[i];
+  source = argv[argi];
   if( task == 2 ){
-     target = argv[++i];
+     target = argv[++argi];
   }
 
-  if( sscanf(argv[++i], "%d", &records) != 1 ||
-      sscanf(argv[++i], "%d", &record_length != 1) {
+  if( sscanf(argv[++argi], "%d", &records) != 1 ||
+      sscanf(argv[++argi], "%d", &record_length) != 1) {
 
-	printf("Error at parsing argument %d\n", i);
+	printf("Error at parsing argument %d\n", argi);
 	return -1;
       }
 
   method = 0;
   if( task != 0 ){
     if( argc >= 6 ){
-      if( strcmp(argv[++i], "sys") == 0 ){
+      if( strcmp(argv[++argi], "sys") == 0 ){
 	method = 0;
-      } else if( strcmp(argv[i], "lib") == 0 ){
+      } else if( strcmp(argv[argi], "lib") == 0 ){
 	method = 1;
       } else {
-	printf("Unrecognized option: %s\n", argv[i]);
+	printf("Unrecognized option: %s\n", argv[argi]);
 	return -1;
       }
     } else {
@@ -70,9 +73,9 @@ int main(int argc, char** argv){
   } else if ( task == 1 ){ // sort
 
     if( method == 1 ){
-      sort_lib(source, records, record_length);
+      return sort_lib(source, records, record_length);
     } else {
-      sort_sys(source, records, record_length);
+      return sort_sys(source, records, record_length);
     }
 
   } else { // copy

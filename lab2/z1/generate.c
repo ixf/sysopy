@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int generate(const char* source, int records, int record_length){
 	      
