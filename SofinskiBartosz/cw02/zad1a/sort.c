@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 
-#ifdef SORT_WITH_LIB
+#ifdef MAKE_WITH_LIB
 
 #include <stdio.h>
 #define READ fread
@@ -17,7 +17,7 @@ int sort_lib(const char* source, int records, int record_length)
 
 #else
 
-#ifdef SORT_WITH_SYS
+#ifdef MAKE_WITH_SYS
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -90,5 +90,6 @@ int sort_sys(const char* source, int records, int record_length)
     }
   }
 
+  CLOSE(f);
   return 0;
 }

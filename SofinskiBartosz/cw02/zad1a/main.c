@@ -9,6 +9,7 @@
 
 #include "sort.h"
 #include "generate.h"
+#include "copy.h"
 
 
 int main(int argc, char** argv){
@@ -79,6 +80,12 @@ int main(int argc, char** argv){
     }
 
   } else { // copy
+
+    if( method == 1 ){
+      return copy_lib(source, target, records, record_length);
+    } else {
+      return copy_sys(source, target, records, record_length);
+    }
 
   }
 
