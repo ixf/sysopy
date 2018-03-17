@@ -91,5 +91,8 @@ int sort_sys(const char* source, int records, int record_length)
   }
 
   CLOSE(f);
+
+  free(key);
+  free(other);
   return 0;
 }

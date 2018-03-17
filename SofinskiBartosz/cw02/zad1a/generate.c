@@ -21,6 +21,7 @@ int generate(const char* source, int records, int record_length){
     fclose(random);
     fclose(f);
 
+    free(buf);
     return 0;
 
 }

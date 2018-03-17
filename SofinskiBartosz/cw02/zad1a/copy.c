@@ -36,7 +36,7 @@ int copy_sys(const char* source, const char* target, int records, int record_len
 {
   unsigned char* buf = malloc(sizeof(unsigned char) * record_length);
   FILETYPE sourcefile = OPEN(source, FILEMODE_R);
-  FILETYPE targetfile = OPEN(source, FILEMODE_W);
+  FILETYPE targetfile = OPEN(target, FILEMODE_W);
 
   for(int i = 0; i < records; i++){
     READ(buf, sizeof(unsigned char), record_length, sourcefile);
@@ -45,6 +45,8 @@ int copy_sys(const char* source, const char* target, int records, int record_len
 
   CLOSE(sourcefile);
   CLOSE(targetfile);
+
+  free(buf);
   return 0;
 }
 

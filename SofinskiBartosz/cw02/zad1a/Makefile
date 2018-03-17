@@ -19,7 +19,7 @@ main: main.o generate.o sort_sys.o sort_lib.o copy_sys.o copy_lib.o
 	$(CC) $^ -o $@
 
 .PHONY: clean
-	
+
 clean:
 	rm -rf *.o main
 	rm -f kappa.txt

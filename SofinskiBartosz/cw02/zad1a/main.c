@@ -2,15 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "sort.h"
 #include "generate.h"
 #include "copy.h"
-
 
 int main(int argc, char** argv){
 
