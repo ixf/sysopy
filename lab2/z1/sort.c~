@@ -1,0 +1,54 @@
+
+
+int sort(
+      unsigned char* other = malloc(sizeof(unsigned char) * record_length);
+      unsigned char* key = malloc(sizeof(unsigned char) * record_length);
+      FILE* f = fopen(source, "r+");
+
+      int read, written;
+      // jestesmy na poczatku pliku
+      // pierwszy odczyt powinien zostac wykonany na drugim ( indeks 1 ) rekordzie
+      fseek(f, record_length, 0) != 0);
+      
+      for(int i = 1; i < records; i++){
+	fseek(f, i*record_length, 0) != 0);
+	  
+	// wskazujemy na kolejny rekord
+	fread(key, sizeof(unsigned char), record_length, f) == 0 );
+
+	// znajdujemy odpowiednie miejsce dla i-tego rekordu
+	// wsrod pierwszych i-1 elementow tablicy rekordow
+	// wstawiamy i-ty rekord na odpowiednie miejsce
+
+	int j = i - 1;
+
+	// uzywawm while true i breakow bo warunek na przerwanie petli
+	// jest skomplikowany
+	while(1){
+	  if( j < 0 )
+	    break;
+
+	  j -= 1;
+
+	  fseek(f, (-2)*record_length, 1) != 0);
+
+	  fread(other, sizeof(unsigned char), record_length, f);
+
+	  if( other[0] < key[0]) { // obecna kolejnosc jest dobra
+	    break;
+	  } else { // trzeba zamienic
+
+	    // key jest w pamieci wiec mozna nadpisywac
+
+	    // jezeli nadpisujemy inny rekord to jest on zapisany w dwoch miejscach
+	    // a my nadpisujemy tylko jego lewa kopie
+
+
+	    fseek(f, (-1)*record_length, 1) != 0);
+	    fwrite(key, sizeof(unsigned char), record_length, f);
+	    fwrite(other, sizeof(unsigned char), record_length, f);
+	    // powtarzamy
+	    fseek(f, (-1)*record_length, 1) != 0);
+	  }
+	}
+}
