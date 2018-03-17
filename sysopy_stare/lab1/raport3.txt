@@ -1,0 +1,149 @@
+Komentarz: Czasy wykonania dla poszczególnych metod kompilacji różnią się od siebie niewiele.
+Najszybszą metodą jest kompilowanie z bilbiotekami statycznymi.
+Większy wpływ na czas może mieć sposób alokacji pamięci. Niektóre funkcje wykonywane na
+tablicy zaalokowanej statycznie działały zauważalnie wolniej niż ich odpowiedniki na
+tablicach zaalokowanych dynamicznie.
+
+
+
+Compiled with static libraries
+make[1]: Entering directory '/home/brt/sysopy'
+./test dynamic create_table 20000 128 add 15000 search_element 5000 remove_and_add 14000
+Dynamic allocation:
+create_table:
+Real time:	00000000005 usec
+User time:	00000000000 usec
+System time:	00000000004 usec
+
+add:
+Real time:	00000042755 usec
+User time:	00000036424 usec
+System time:	00000006301 usec
+
+search_element:
+Real time:	00000203227 usec
+User time:	00000203193 usec
+System time:	00000000033 usec
+
+remove_and_add:
+Real time:	00001456297 usec
+User time:	00001439585 usec
+System time:	00000016666 usec
+
+./test static create_table add 15000 search_element 5000 remove_and_add 14000
+Static allocation:
+create_table:
+Real time:	00000000010 usec
+User time:	00000000009 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000038099 usec
+User time:	00000038098 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000267775 usec
+User time:	00000267773 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001440803 usec
+User time:	00001440769 usec
+System time:	00000000000 usec
+
+make[1]: Leaving directory '/home/brt/sysopy'
+Compiled with shared libraries
+make[1]: Entering directory '/home/brt/sysopy'
+./test dynamic create_table 20000 128 add 15000 search_element 5000 remove_and_add 14000
+Dynamic allocation:
+create_table:
+Real time:	00000000007 usec
+User time:	00000000007 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000044449 usec
+User time:	00000044408 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000230440 usec
+User time:	00000229873 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001466707 usec
+User time:	00001455908 usec
+System time:	00000010004 usec
+
+./test static create_table add 15000 search_element 5000 remove_and_add 14000
+Static allocation:
+create_table:
+Real time:	00000000002 usec
+User time:	00000000001 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000039992 usec
+User time:	00000039992 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000305794 usec
+User time:	00000305783 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001496634 usec
+User time:	00001496600 usec
+System time:	00000000000 usec
+
+make[1]: Leaving directory '/home/brt/sysopy'
+Compiled with dynamic libraries
+make[1]: Entering directory '/home/brt/sysopy'
+./test dynamic create_table 20000 128 add 15000 search_element 5000 remove_and_add 14000
+Dynamic allocation:
+create_table:
+Real time:	00000000005 usec
+User time:	00000000004 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000038632 usec
+User time:	00000038612 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000203439 usec
+User time:	00000203421 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001473838 usec
+User time:	00001467143 usec
+System time:	00000006665 usec
+
+./test static create_table add 15000 search_element 5000 remove_and_add 14000
+Static allocation:
+create_table:
+Real time:	00000000001 usec
+User time:	00000000001 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000039971 usec
+User time:	00000039971 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000304131 usec
+User time:	00000304128 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001505303 usec
+User time:	00001505262 usec
+System time:	00000000000 usec
+
+make[1]: Leaving directory '/home/brt/sysopy'
