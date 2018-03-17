@@ -22,4 +22,5 @@ sort_lib.o: sort.c
 	
 clean:
 	rm -rf *.o main
+	rm kappa.txt
 
