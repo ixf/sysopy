@@ -35,7 +35,7 @@ int main(int argc, char** argv){
 
 	printf("sort_sys\n");
 	start_time();
-	sort_sys("dane2", records[j], buffer_sizes[i]);
+        sort_sys("dane2", records[j], buffer_sizes[i]);
 	end_time();
 
 	printf("sort_lib\n");
