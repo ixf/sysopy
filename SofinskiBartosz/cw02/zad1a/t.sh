@@ -8,7 +8,6 @@ elif [ "$1" == "sort" ]; then
 exe ./main sort kappa.txt 10 4 $2
 elif [ "$1" == "copy" ]; then
 exe ./main copy kappa.txt kappa_copy.txt 10 4 $2
-elif [ "$1" == "view" ]; then
 else
 echo "Wrong arg 1"
 fi
