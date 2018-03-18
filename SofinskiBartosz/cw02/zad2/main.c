@@ -46,7 +46,7 @@ int parse_dirs(const char *dirpath,
 
 	fn(name_buffer, buf, FTW_F, NULL);
     } else if ( de->d_type == DT_DIR ){
-      if( strcmp( &(de->d_name), "..") != 0 && strcmp( &(de->d_name), ".") != 0){
+      if( strcmp( (const char*) &(de->d_name), "..") != 0 && strcmp( (const char*) &(de->d_name), ".") != 0){
 	strcpy(name_buffer, dirpath);
 	strcat(name_buffer, "/");
 	strcat(name_buffer, de->d_name);
@@ -126,9 +126,9 @@ int main(int argc, char** argv){
   if( strcmp("=", argv[2]) == 0){ // rowna
     cmp_result = 0;
   } else if( strcmp(">", argv[2]) == 0){ // pozniejsza
-    cmp_result = 1;
-  } else if( strcmp("<", argv[2]) == 0){ // wczesniejsza
     cmp_result = -1;
+  } else if( strcmp("<", argv[2]) == 0){ // wczesniejsza
+    cmp_result = 1;
   } else {
     printf("wrong arg #2\n");
     return -2;
