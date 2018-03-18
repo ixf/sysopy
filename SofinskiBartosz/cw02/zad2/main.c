@@ -1,30 +1,64 @@
 
+
 #define _XOPEN_SOURCE 500
 #include <ftw.h>
+
+#include <dirent.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <linux/limits.h>
 
+#include <errno.h>
+
 int parse_dirs(const char *dirpath,
 	       int (*fn) (const char *fpath, const struct stat *sb,
 			  int typeflag, struct FTW *ftwbuf)) {
 
-  DIR* d = opendir(dirpath);
-  struct dirent* de;
-  do{
+  char name_buffer[PATH_MAX+1];
+  //realpath(dirpath, name_buffer);
+  strcpy(name_buffer, dirpath);
+  
+  DIR* d = opendir(name_buffer);
+  struct dirent* de = readdir(d);
+  struct stat* buf = malloc( sizeof(struct stat) );
+
+  while(de != NULL){
+
+    if( de->d_type == DT_REG ){
+	errno = 0;
+
+	strcpy(name_buffer, dirpath);
+	strcat(name_buffer, "/");
+	strcat(name_buffer, de->d_name);
+
+	lstat(name_buffer, buf);
+
+	if( errno != 0){
+	printf("errno %d\n", errno);
+	printf("%s %s\n", de->d_name, name_buffer);
+	}
+
+	fn(name_buffer, buf, FTW_F, NULL);
+    } else if ( de->d_type == DT_DIR ){
+      if( strcmp( &(de->d_name), "..") != 0 && strcmp( &(de->d_name), ".") != 0){
+	strcpy(name_buffer, dirpath);
+	strcat(name_buffer, "/");
+	strcat(name_buffer, de->d_name);
+	//printf("rekurencyjne wywoalnie dla %s\n", name_buffer);
+	parse_dirs(name_buffer, fn);
+      }
+    }
     de = readdir(d);
-    struct stat* buf;
+  }
 
-    fn(de->d_name, buf, FTW_F, NULL);
 
-  } while(de != NULL);
+  free(buf);
 
   closedir(d);
   return 0;

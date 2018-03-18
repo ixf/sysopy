@@ -1,14 +1,19 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99
+CFLAGS=-g -Wall -std=gnu99 -D_DEFAULT_SOURCE
 
 all: main_dirent main_nftw
 
-%: %.o
+%_dirent: %_dirent.o
 	$(CC) $^ -o $@
 
-%.o: %.c
-	$(CC) -c $(CFLAGS) $^ -o $@
+%_nftw: %_nftw.o
+	$(CC) $^ -o $@
 
+%_dirent.o: %.c
+	$(CC) -c $(CFLAGS) $^ -o $@ -D MAKE_WITH_DIRENT
+
+%_nftw.o: %.c
+	$(CC) -c $(CFLAGS) $^ -o $@ -D MAKE_WITH_NFTW
 
 .PHONY: clean
 
