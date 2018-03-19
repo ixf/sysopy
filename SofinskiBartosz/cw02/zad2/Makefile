@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -std=gnu99 -D_DEFAULT_SOURCE
+CFLAGS=-g -Wall -std=gnu99 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 
 all: main_dirent main_nftw
 
