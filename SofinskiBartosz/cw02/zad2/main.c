@@ -40,8 +40,8 @@ int parse_dirs(const char *dirpath,
 	lstat(name_buffer, buf);
 
 	if( errno != 0){
-	printf("errno %d\n", errno);
-	printf("%s %s\n", de->d_name, name_buffer);
+		printf("errno %d\n", errno);
+		printf("%s %s\n", de->d_name, name_buffer);
 	}
 
 	fn(name_buffer, buf, FTW_F, NULL);
@@ -105,7 +105,6 @@ static int print_file_info(const char *fpath, const struct stat *sb, int typefla
 
   printf(" %*ldB ", 8, sb->st_size );
 
-  printf(" %ld ", sb->st_mtime );
   char* time_string = ctime(&(sb->st_mtime));
   printf(" %.24s ", time_string );
 
