@@ -2,8 +2,6 @@
 #define _XOPEN_SOURCE 500
 #include <ftw.h>
 
-#include <dirent.h>
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +12,9 @@
 #include <linux/limits.h>
 
 #include <errno.h>
+
+#ifdef MAKE_WITH_DIRENT
+#include <dirent.h>
 
 int parse_dirs(const char *dirpath,
 	       int (*fn) (const char *fpath, const struct stat *sb,
@@ -62,6 +63,7 @@ int parse_dirs(const char *dirpath,
   closedir(d);
   return 0;
 }
+#endif
 
 static struct tm pivot = {0};
 static int cmp_result;
