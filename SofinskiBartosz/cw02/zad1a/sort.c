@@ -13,7 +13,7 @@
 #define FILEMODE "r+"
 #define SEEK_MODE_0 0
 #define SEEK_MODE_1 1
-int sort_lib(const char* source, int records, int record_length)
+#define SORT sort_lib
 
 #else
 
@@ -33,11 +33,11 @@ int sort_lib(const char* source, int records, int record_length)
 #define FILEMODE O_RDWR
 #define SEEK_MODE_0 SEEK_SET
 #define SEEK_MODE_1 SEEK_CUR
-int sort_sys(const char* source, int records, int record_length)
+#define SORT sort_sys
 
 #endif
 #endif
-{
+int SORT(const char* source, int records, int record_length) {
 
   unsigned char* other = malloc(sizeof(unsigned char) * record_length);
   unsigned char* key = malloc(sizeof(unsigned char) * record_length);

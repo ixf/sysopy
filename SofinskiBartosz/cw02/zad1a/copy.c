@@ -11,7 +11,7 @@
 #define FILETYPE FILE*
 #define FILEMODE_R "r"
 #define FILEMODE_W "w"
-int copy_lib(const char* source, const char* target, int records, int record_length)
+#define COPY copy_lib
 
 #else
 
@@ -29,11 +29,11 @@ int copy_lib(const char* source, const char* target, int records, int record_len
 #define FILETYPE int
 #define FILEMODE_R O_RDONLY
 #define FILEMODE_W O_WRONLY | O_CREAT | O_TRUNC, 0644
-int copy_sys(const char* source, const char* target, int records, int record_length)
+#define COPY copy_sys
 
 #endif
 #endif
-{
+int COPY(const char* source, const char* target, int records, int record_length) {
   unsigned char* buf = malloc(sizeof(unsigned char) * record_length);
   FILETYPE sourcefile = OPEN(source, FILEMODE_R);
   FILETYPE targetfile = OPEN(target, FILEMODE_W);
