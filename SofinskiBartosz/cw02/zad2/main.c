@@ -1,9 +1,6 @@
 
-
 #define _XOPEN_SOURCE 500
 #include <ftw.h>
-
-#include <dirent.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -15,6 +12,9 @@
 #include <linux/limits.h>
 
 #include <errno.h>
+
+#ifdef MAKE_WITH_DIRENT
+#include <dirent.h>
 
 int parse_dirs(const char *dirpath,
 	       int (*fn) (const char *fpath, const struct stat *sb,
@@ -40,8 +40,8 @@ int parse_dirs(const char *dirpath,
 	lstat(name_buffer, buf);
 
 	if( errno != 0){
-	printf("errno %d\n", errno);
-	printf("%s %s\n", de->d_name, name_buffer);
+		printf("errno %d\n", errno);
+		printf("%s %s\n", de->d_name, name_buffer);
 	}
 
 	fn(name_buffer, buf, FTW_F, NULL);
@@ -63,6 +63,7 @@ int parse_dirs(const char *dirpath,
   closedir(d);
   return 0;
 }
+#endif
 
 static struct tm pivot = {0};
 static int cmp_result;
@@ -104,7 +105,6 @@ static int print_file_info(const char *fpath, const struct stat *sb, int typefla
 
   printf(" %*ldB ", 8, sb->st_size );
 
-  printf(" %ld ", sb->st_mtime );
   char* time_string = ctime(&(sb->st_mtime));
   printf(" %.24s ", time_string );
 
