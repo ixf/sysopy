@@ -29,6 +29,5 @@ timing.o: timing.c
 
 clean:
 	rm -rf *.o main
-	rm -f wyniki.txt
-	rm dane1 dane2 dane
+	rm -f wyniki.txt dane1 dane2 dane
 

@@ -2,8 +2,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/times.h>
+#include <string.h>
+#include <sys/time.h>
 #include <sys/resource.h>
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define REPS 40
+
+typedef enum { METHOD_STATIC=0, METHOD_DYNAMIC=1 } method;
 
 #ifdef TEST_STATIC
 #include "block_array.h"
@@ -11,89 +17,196 @@
 #include <dlfcn.h>
 #endif
 
-void fill_block(char** block_array, int elem, int block_size){
-	for(int i = 0; i < block_size; i++){
-		block_array[elem][i] = 'A' + (rand() % 26) + (rand()%2 )*24;
-	}
+static struct timeval start_tv, end_tv;
+static struct rusage start_usage, end_usage;
+
+static FILE* file;
+
+void print_time(FILE* stream){
+  fprintf(stream, "Real time:\t%011ld usec\n", (end_tv.tv_sec - start_tv.tv_sec) * 1000000 +
+	  end_tv.tv_usec - start_tv.tv_usec);
+  fprintf(stream, "User time:\t%011ld usec\n", (end_usage.ru_utime.tv_sec - start_usage.ru_utime.tv_sec)*1000000 +
+	  end_usage.ru_utime.tv_usec - start_usage.ru_utime.tv_usec);
+  fprintf(stream, "System time:\t%011ld usec\n", (end_usage.ru_stime.tv_sec - start_usage.ru_stime.tv_sec)*1000000 +
+	  end_usage.ru_stime.tv_usec - start_usage.ru_stime.tv_usec);
 }
 
-void print_times(struct timeval start_tv, struct timeval end_tv,
-		struct rusage start_usage, struct rusage end_usage, FILE* stream){
-	fprintf(stream, "Real time:\t%011ld usec\n", (end_tv.tv_sec - start_tv.tv_sec) * 1000000 +
-			end_tv.tv_usec - start_tv.tv_usec);
-	fprintf(stream, "User time:\t%011ld usec\n", (end_usage.ru_utime.tv_sec - start_usage.ru_utime.tv_sec)*1000000 +
-			end_usage.ru_utime.tv_usec - start_usage.ru_utime.tv_usec);
-	fprintf(stream, "System time:\t%011ld usec\n", (end_usage.ru_stime.tv_sec - start_usage.ru_stime.tv_sec)*1000000 +
-			end_usage.ru_stime.tv_usec - start_usage.ru_stime.tv_usec);
+void time_start(){
+  gettimeofday(&start_tv, NULL);
+  getrusage(RUSAGE_SELF, &start_usage);
 }
 
+void time_end(){
+  gettimeofday(&end_tv, NULL);
+  getrusage(RUSAGE_SELF, &end_usage);
+
+  print_time(stdout);
+  print_time(file);
+}
 
 int main(int argc, char** argv){
-	if( argc < 4 ){
-		printf("Not enough arguments.\n");
-		return 1;
-	}
+  if( argc < 4 ){
+    printf("Not enough arguments.\nUsage: test static/dynamic tasks");
+    return 1;
+  }
 
-	srand(time(NULL));
+  file = fopen("outputs","w");
+
+  srand(time(NULL));
+
 #ifdef TEST_DYNAMIC
-	void *handle = dlopen("./libblock_array.so", RTLD_LAZY);
-	if(!handle){
-		return 10;
-	}
-	
-	char** (*create_block_array)(int,int,int);
-	char* (*create_block)(char**,int,int,int);
-	void (*delete_block)(char**,int,int);
-	void (*delete_block_array)(char**,int);
-	int (*find_nearest)(char**,int,int,int);
+  void *handle = dlopen("./libblock_array.so", RTLD_LAZY);
+  if(!handle){
+    return 10;
+  }
 
-	create_block_array = dlsym(handle,"create_block_array");
-	create_block = dlsym(handle,"create_block");
-	delete_block = dlsym(handle,"delete_block");
-	delete_block_array = dlsym(handle,"delete_block_array");
-	find_nearest = dlsym(handle,"find_nearest");
-	
+
+  char** (*create_block_array_dynamic)(int, int);
+  void (*create_block_dynamic)(char**,int,int);
+  void (*create_block_static)(int);
+  void (*delete_block_dynamic)(char**,int,int);
+  void (*delete_block_static)(int);
+  void (*delete_block_array_dynamic)(char**,int);
+  int (*find_nearest_dynamic)(char**,int,int,int);
+  int (*find_nearest_static)(int);
+
+  create_block_array_dynamic = dlsym(handle,"create_block_array_dynamic");
+  create_block_dynamic = dlsym(handle,"create_block_dynamic");
+  create_block_static = dlsym(handle,"create_block_static");
+  delete_block_dynamic = dlsym(handle,"delete_block_dynamic");
+  delete_block_static = dlsym(handle,"delete_block_static");
+  delete_block_array_dynamic = dlsym(handle,"delete_block_array_dynamic");
+  find_nearest_dynamic = dlsym(handle,"find_nearest_dynamic");
+  find_nearest_static = dlsym(handle,"find_nearest_static");
 #endif
 	
-	char** bar;
+  method m;
+  if( strcmp( argv[1], "static") == 0){
+    m = METHOD_STATIC;
+    fprintf(stdout, "Static allocation:\n");
+    fprintf(file, "Static allocation:\n");
+  } else if ( strcmp( argv[1], "dynamic") == 0){
+    m = METHOD_DYNAMIC;
+    fprintf(stdout, "Dynamic allocation:\n");
+    fprintf(file, "Dynamic allocation:\n");
+  } else {
+    return 11;
+  }
 
-	int m = strtol(argv[1], NULL, 10);
+  char** bar;
+  int added = 0;
+  int rozmiar, rozmiar_bloku; 
 
-	for(int i = 2; i < argc; i++){
-		if( strcmp( argv[i], "create_table") == 0){
-			int rozmiar = strtol( argv[i+1], NULL, 10);
-			int rozmiar_bloku = strtol( argv[i+2], NULL, 10);
-			i += 2;
+  for(int i = 2; i < argc; i++){
+    if( strcmp( argv[i], "create_table") == 0){
+      fprintf(stdout, "create_table:\n");
+      fprintf(file, "create_table:\n");
 
-			bar = create_block_array(rozmiar, rozmiar_bloku, m);
+      if(m == METHOD_DYNAMIC){
+	rozmiar = strtol( argv[i+1], NULL, 10);
+	rozmiar_bloku = strtol( argv[i+2], NULL, 10);
+	i += 2;
+      }
 
-		} else if( strcmp( argv[i], "search_element") == 0){
+      time_start();
+      if(m == METHOD_DYNAMIC){
+	bar = create_block_array_dynamic(rozmiar, rozmiar_bloku);
+      }
+      time_end();
 
-		} else if( strcmp( argv[i], "remove") == 0){
+      fprintf(stdout, "\n");
+      fprintf(file, "\n");
 
-		} else if( strcmp( argv[i], "add") == 0){
+    } else if( strcmp( argv[i], "search_element") == 0){
+      fprintf(stdout, "search_element:\n");
+      fprintf(file, "search_element:\n");
 
-		} else if( strcmp( argv[i], "remove_and_add") == 0){
+      int index = strtol( argv[i+1], NULL, 10);
+      time_start();
+      if(m == METHOD_DYNAMIC){
+	for(int i = 0; i < REPS; i++)
+	  find_nearest_dynamic(bar, index, MIN(added,rozmiar), rozmiar_bloku);
+      } else {
+	for(int i = 0; i < REPS; i++)
+	  find_nearest_static(index);
+      }
+      time_end();
+      i += 1;
 
-		}
+      fprintf(stdout, "\n");
+      fprintf(file, "\n");
+
+    } else if( strcmp( argv[i], "remove") == 0){
+      fprintf(stdout, "remove:\n");
+      fprintf(file, "remove:\n");
+      int number = strtol( argv[i+1], NULL, 10);
+
+      added -= number;
+
+      time_start();
+      for(int i = 0; i < number; i++)
+	if(m == METHOD_DYNAMIC){
+	  delete_block_dynamic(bar, i, rozmiar_bloku);
+	} else {
+	  delete_block_static(i);
 	}
 
-	struct timeval start_tv, end_tv;
-	struct rusage start_usage, end_usage;
-	gettimeofday(&start_tv, NULL);
-	getrusage(RUSAGE_SELF, &start_usage);
+      time_end();
+      i += 1;
 
-	//bar = create_block_array(elems, block_size, m);
-	//delete_block_array(bar, elems);
+      fprintf(stdout, "\n");
+      fprintf(file, "\n");
+    } else if( strcmp( argv[i], "add") == 0){
+      fprintf(stdout, "add:\n");
+      fprintf(file, "add:\n");
+      int number = strtol( argv[i+1], NULL, 10);
 
-	gettimeofday(&end_tv, NULL);
-	getrusage(RUSAGE_SELF, &end_usage);
+      added += number;
 
-	print_times(start_tv, end_tv, start_usage, end_usage, stdout);
+      time_start();
+      for(int j = 0; j < number; j++)
+	if(m == METHOD_DYNAMIC){
+	  create_block_dynamic(bar, j, rozmiar_bloku);
+	} else {
+	  create_block_static(j);
+	}
+      time_end();
+
+      i += 1;
+
+      fprintf(stdout, "\n");
+      fprintf(file, "\n");
+    } else if( strcmp( argv[i], "remove_and_add") == 0){
+      fprintf(stdout, "remove_and_add:\n");
+      fprintf(file, "remove_and_add:\n");
+      int number = strtol( argv[i+1], NULL, 10);
+
+      time_start();
+      for(int i = 0; i < REPS; i++)
+	if(m == METHOD_DYNAMIC){
+	  for(int j = 0; j < number; j++)
+	    delete_block_dynamic(bar, rozmiar-j, rozmiar_bloku);
+	  for(int j = 0; j < number; j++)
+	    create_block_dynamic(bar, rozmiar-j, rozmiar_bloku);
+	} else {
+	  for(int j = 0; j < number; j++)
+	    delete_block_static(j);
+	  for(int j = 0; j < number; j++)
+	    create_block_static(j);
+	}
+
+      time_end();
+      i += 1;
+      fprintf(stdout, "\n");
+      fprintf(file, "\n");
+    }
+  }
+
+  if(m == METHOD_DYNAMIC)
+    delete_block_array_dynamic(bar, rozmiar);
 #ifdef TEST_DYNAMIC
-	dlclose(handle);
+  dlclose(handle);
 #endif
-	return 0;
+  fclose(file);
+  return 0;
 }
-
-

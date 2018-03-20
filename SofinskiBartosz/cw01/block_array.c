@@ -1,69 +1,103 @@
 #include "block_array.h"
 #include <stdlib.h>
+#include <string.h>
 
-// funkcje dla obu wersji alokacji pamieci
-#define SIZE 100
-#define BLOCK_SIZE 32
+#ifndef SIZE
+#define SIZE 20000
+#endif
+
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 128
+#endif
 
 char block_array[SIZE][BLOCK_SIZE];
 
-int find_nearest(char** block_array, int elem, int elems, int block_size){
-	int given_sum = 0;
-	for(int i = 0; i < block_size; i++){
-		given_sum += block_array[elem][i];
-	}
+char** create_block_array_dynamic(int elems, int block_size){
+  char** t;
+    t = (char**) calloc(elems, sizeof(char*));
+  return t;
+}
+
+void create_block_dynamic(char** block_array, int elem, int block_size){
+  block_array[elem] = calloc(block_size, sizeof(char));
+  for(int i = 0; i < block_size; i++){
+    block_array[elem][i] = 'A' + (rand() % 26) + (rand()%2)*24;
+  }
+}
+
+void create_block_static(int elem){
+  for(int i = 0; i < BLOCK_SIZE; i++){
+    block_array[elem][i] = 'A' + (rand() % 26) + (rand()%2)*24;
+  }
+}
+
+void delete_block_dynamic(char** block_array, int elem, int block_size){
+  free(block_array[elem]);
+}
+
+void delete_block_static(int elem){
+  memset(block_array[elem], 0, sizeof(char)*BLOCK_SIZE);
+}
+
+void delete_block_array_dynamic(char** block_array, int elems){
+  for(int i = 0; i < elems; i++){
+    free(block_array[i]);
+  }
+  free(block_array);
+}
+
+int find_nearest_dynamic(char** block_array, int elem, int elems, int block_size){
+  int given_sum = 0;
+  for(int i = 0; i < block_size; i++){
+    given_sum += block_array[elem][i];
+  }
 	
-	int nearest = 0;
-	int nearest_diff = 0;
+  int nearest = 0;
+  int nearest_diff = 0;
 
-	for(int i = 0; i < elems; i++){
-		if ( i != elem){
-			int sum = 0;
-			for(int j = 0; j < block_size; j++){
-				sum += block_array[i][j];
-			}
+  for(int i = 0; i < elems; i++){
+    if ( i != elem){
+      int sum = 0;
+      for(int j = 0; j < block_size; j++){
+	sum += block_array[i][j];
+      }
 
-			if( abs( given_sum - sum ) < nearest_diff ){
+      if( abs( given_sum - sum ) < nearest_diff ){
 				
-				nearest = i;
-				nearest_diff = abs(given_sum - sum);
+	nearest = i;
+	nearest_diff = abs(given_sum - sum);
 
-			}
-		}
-	}
+      }
+    }
+  }
+
+  return nearest;
 }
 
-void delete_block_array(char** block_array, int elems){
-	for(int i = 0; i < elems; i++){
-		free(block_array[i]);
-	}
-	free(block_array);
-}
+int find_nearest_static(int elem){
+  int given_sum = 0;
+  for(int i = 0; i < BLOCK_SIZE; i++){
+    given_sum += block_array[elem][i];
+  }
+	
+  int nearest = 0;
+  int nearest_diff = 0;
 
-/* Jako ze w programie korzystajacym z biblioteki musimy miec mozliwosc
-tworzenia tablicy blokow o danym w momencie uruchamiania rozmiarze to nie
-moze byc ona po prostu globalna. W tej wersji zdecydowalem sie na alokacje
-wszystkich blokow w momencie tworzenia tablicy, co jest nieco bardziej
-statycznym rozwiazaniem niz rozwiazanie powyzej.
-Metoda alokacji pamieci jest przekazywana w parametrze, co pozwoli na
-prostsza zmiane miedzy metodami alokacji w programie testujacym. */
+  for(int i = 0; i < SIZE; i++){
+    if ( i != elem){
+      int sum = 0;
+      for(int j = 0; j < BLOCK_SIZE; j++){
+	sum += block_array[i][j];
+      }
 
-char** create_block_array(int elems, int block_size, method m){
-	char** t = (char**) calloc(elems, sizeof(char*));
-	if(m == METHOD_STATIC)
-		for(int i = 0; i < elems; i++){
-			t[i] = calloc(block_size, sizeof(char));
-		}
-	return t;
-}
+      if( abs( given_sum - sum ) < nearest_diff ){
+				
+	nearest = i;
+	nearest_diff = abs(given_sum - sum);
 
-char* create_block(char** block_array, int elem, int block_size, method m){
-	if(m == METHOD_DYNAMIC)
-		block_array[elem] = calloc(block_size, sizeof(char));
-	return block_array[elem];
-}
+      }
+    }
+  }
 
-void delete_block(char** block_array, int elem, method m){
-	if(m == METHOD_DYNAMIC)
-		free(block_array[elem]);
+  return nearest;
 }

@@ -1,0 +1,44 @@
+./test dynamic create_table 20000 128 add 15000 search_element 5000 remove_and_add 14000
+Dynamic allocation:
+create_table:
+Real time:	00000000014 usec
+User time:	00000000012 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000043248 usec
+User time:	00000043248 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000203414 usec
+User time:	00000203404 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001426025 usec
+User time:	00001412693 usec
+System time:	00000013310 usec
+
+./test static create_table add 15000 search_element 5000 remove_and_add 14000
+Static allocation:
+create_table:
+Real time:	00000000002 usec
+User time:	00000000001 usec
+System time:	00000000000 usec
+
+add:
+Real time:	00000041219 usec
+User time:	00000041219 usec
+System time:	00000000000 usec
+
+search_element:
+Real time:	00000309883 usec
+User time:	00000309880 usec
+System time:	00000000000 usec
+
+remove_and_add:
+Real time:	00001491267 usec
+User time:	00001491227 usec
+System time:	00000000000 usec
+
