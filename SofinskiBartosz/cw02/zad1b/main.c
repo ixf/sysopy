@@ -10,13 +10,10 @@
 #include "../zad1a/copy.h"
 #include "timing.h"
 
-static FILE* wyniki;
-
 static int buffer_sizes[4] = { 4, 512, 4096, 8192 };
 static int records[2] = { 2000, 3500 };
 
 int main(int argc, char** argv){
-  wyniki = fopen("wyniki.txt", "w");
 
   for(int j = 0; j < 2; j++)
     for(int i = 0; i < 4; i++){
@@ -43,6 +40,5 @@ int main(int argc, char** argv){
 	sort_lib("dane3", records[j], buffer_sizes[i]);
 	end_time();
     }
-
-  fclose(wyniki);
+  return 0;
 }
