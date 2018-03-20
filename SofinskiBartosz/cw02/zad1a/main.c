@@ -9,7 +9,7 @@
 
 int main(int argc, char** argv){
 
-  if( argc < 5 ){
+  if( argc < 2 ){
     printf("Not enough args\n");
     return 10;
   }
@@ -30,31 +30,32 @@ int main(int argc, char** argv){
     return -1;
   }
 
+  if( argc < 5 + task ){
+    printf("Not enough args\n");
+    return 10;
+  }
+
   source = argv[argi];
   if( task == 2 ){
-     target = argv[++argi];
+    target = argv[++argi];
   }
 
   if( sscanf(argv[++argi], "%d", &records) != 1 ||
       sscanf(argv[++argi], "%d", &record_length) != 1) {
 
-	printf("Error at parsing argument %d\n", argi);
-	return -1;
-      }
+    printf("Error at parsing argument %d\n", argi);
+    return -1;
+  }
 
   method = 0;
   if( task != 0 ){
-    if( argc >= 6 ){
-      if( strcmp(argv[++argi], "sys") == 0 ){
-	method = 0;
-      } else if( strcmp(argv[argi], "lib") == 0 ){
-	method = 1;
-      } else {
-	printf("Unrecognized option: %s\n", argv[argi]);
-	return -1;
-      }
+    argi += 1;
+    if( strcmp(argv[argi], "sys") == 0 ){
+      method = 0;
+    } else if( strcmp(argv[argi], "lib") == 0 ){
+      method = 1;
     } else {
-      printf("Missing lib/sys argument\n");
+      printf("Unrecognized option: %s\n", argv[argi]);
       return -1;
     }
   }

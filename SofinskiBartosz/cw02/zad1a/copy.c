@@ -28,7 +28,7 @@ int copy_lib(const char* source, const char* target, int records, int record_len
 #define OPEN open
 #define FILETYPE int
 #define FILEMODE_R O_RDONLY
-#define FILEMODE_W O_WRONLY | O_CREAT, 0600
+#define FILEMODE_W O_WRONLY | O_CREAT | O_TRUNC, 0600
 int copy_sys(const char* source, const char* target, int records, int record_length)
 
 #endif
