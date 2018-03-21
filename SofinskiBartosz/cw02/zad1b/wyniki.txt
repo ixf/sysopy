@@ -1,0 +1,109 @@
+Testy dla: rozmiar 4, ilosc rekordow 2000
+copy_sys
+User time:	00000000000
+System time:	00000000000
+copy_lib
+User time:	00000000000
+System time:	00000000001
+sort_sys
+User time:	00000000067
+System time:	00000000326
+sort_lib
+User time:	00000000090
+System time:	00000000252
+Testy dla: rozmiar 512, ilosc rekordow 2000
+copy_sys
+User time:	00000000001
+System time:	00000000001
+copy_lib
+User time:	00000000000
+System time:	00000000000
+sort_sys
+User time:	00000000060
+System time:	00000000315
+sort_lib
+User time:	00000000093
+System time:	00000000287
+Testy dla: rozmiar 4096, ilosc rekordow 2000
+copy_sys
+User time:	00000000000
+System time:	00000000001
+copy_lib
+User time:	00000000000
+System time:	00000000001
+sort_sys
+User time:	00000000062
+System time:	00000000389
+sort_lib
+User time:	00000000112
+System time:	00000000430
+Testy dla: rozmiar 8192, ilosc rekordow 2000
+copy_sys
+User time:	00000000000
+System time:	00000000003
+copy_lib
+User time:	00000000000
+System time:	00000000003
+sort_sys
+User time:	00000000077
+System time:	00000000795
+sort_lib
+User time:	00000000142
+System time:	00000000765
+Testy dla: rozmiar 4, ilosc rekordow 3500
+copy_sys
+User time:	00000000000
+System time:	00000000000
+copy_lib
+User time:	00000000000
+System time:	00000000001
+sort_sys
+User time:	00000000204
+System time:	00000001025
+sort_lib
+User time:	00000000280
+System time:	00000000809
+Testy dla: rozmiar 512, ilosc rekordow 3500
+copy_sys
+User time:	00000000000
+System time:	00000000001
+copy_lib
+User time:	00000000000
+System time:	00000000000
+sort_sys
+User time:	00000000194
+System time:	00000000991
+sort_lib
+User time:	00000000295
+System time:	00000000862
+Testy dla: rozmiar 4096, ilosc rekordow 3500
+copy_sys
+User time:	00000000000
+System time:	00000000001
+copy_lib
+User time:	00000000000
+System time:	00000000002
+sort_sys
+User time:	00000000201
+System time:	00000001310
+sort_lib
+User time:	00000000328
+System time:	00000001321
+Testy dla: rozmiar 8192, ilosc rekordow 3500
+copy_sys
+User time:	00000000000
+System time:	00000000003
+copy_lib
+User time:	00000000000
+System time:	00000000003
+sort_sys
+User time:	00000000203
+System time:	00000002081
+sort_lib
+User time:	00000000439
+System time:	00000002489
+
+
+Z pomiarow wynika, ze dla mniejszych rozmiarow rekordow funkcje biblioteczne sa szybsze od funkcji systemowych.
+Dla wieszkych rozmiarow funkcje systemowe sa szybsze.
+
