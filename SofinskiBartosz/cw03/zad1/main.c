@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
+
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <linux/limits.h>
@@ -18,38 +21,46 @@ int parse_dirs(const char *dirpath,
 	       int (*fn) (const char *fpath, const struct stat *sb,
 			  int typeflag, struct FTW *ftwbuf)) {
 
-  char name_buffer[PATH_MAX+1];
+  char* name_buffer = malloc( sizeof(char) * (PATH_MAX+1));
   //realpath(dirpath, name_buffer);
   strcpy(name_buffer, dirpath);
-  
+
   DIR* d = opendir(name_buffer);
   struct dirent* de = readdir(d);
   struct stat* buf = malloc( sizeof(struct stat) );
 
+  pid_t t = 1;
   while(de != NULL){
 
     if( de->d_type == DT_REG ){
-	errno = 0;
+      errno = 0;
 
-	strcpy(name_buffer, dirpath);
-	strcat(name_buffer, "/");
-	strcat(name_buffer, de->d_name);
+      strcpy(name_buffer, dirpath);
+      strcat(name_buffer, "/");
+      strcat(name_buffer, de->d_name);
 
-	lstat(name_buffer, buf);
+      lstat(name_buffer, buf);
 
-	if( errno != 0){
-		printf("errno %d\n", errno);
-		printf("%s %s\n", de->d_name, name_buffer);
-	}
+      if( errno != 0){
+	printf("errno %d\n", errno);
+	printf("%s %s\n", de->d_name, name_buffer);
+      }
 
-	fn(name_buffer, buf, FTW_F, NULL);
+      fn(name_buffer, buf, FTW_F, NULL);
     } else if ( de->d_type == DT_DIR ){
       if( strcmp( (const char*) &(de->d_name), "..") != 0 && strcmp( (const char*) &(de->d_name), ".") != 0){
 	strcpy(name_buffer, dirpath);
 	strcat(name_buffer, "/");
 	strcat(name_buffer, de->d_name);
-	//printf("rekurencyjne wywoalnie dla %s\n", name_buffer);
-	parse_dirs(name_buffer, fn);
+
+	t = fork();
+	
+	if(t == 0){
+	  parse_dirs(name_buffer, fn);
+	  exit(0);
+	} else {
+	  wait(NULL);
+	}
       }
     }
     de = readdir(d);
@@ -57,6 +68,7 @@ int parse_dirs(const char *dirpath,
 
 
   free(buf);
+  free(name_buffer);
 
   closedir(d);
   return 0;
@@ -78,6 +90,8 @@ int tmcmp(struct tm* A, struct tm* B){
 }
 
 static int print_file_info(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){
+
+  //printf("%d: ", getpid());
 
   if( typeflag != FTW_F )
     return 0;
