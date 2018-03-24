@@ -1,4 +1,6 @@
-echo kappa pride
-echo kappa
+ls -la
+id
+echo bar foo
+echo      kappa
 false
 ls -a
