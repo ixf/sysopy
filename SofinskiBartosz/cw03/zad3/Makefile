@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -Wall
 
-all: main ack
+all: main ack alloc
 
 %: %.o
 	$(CC) $^ -o $@
