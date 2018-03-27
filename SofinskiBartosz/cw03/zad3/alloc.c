@@ -33,7 +33,8 @@ int main(int argc, char** argv){
 	}
 
 	int mbs = strtol(argv[1], NULL, 10);
-	for(int i = 0; i < 1024*mbs; i++)
+	int i;
+	for(i = 0; i < 1024*mbs; i++)
 		eat_kilobyte();
 
 	sleep(2);

@@ -12,5 +12,5 @@ all: main ack alloc
 .PHONY: clean
 
 clean:
-	rm -rf *.o main ack
+	rm -rf *.o main ack alloc
 

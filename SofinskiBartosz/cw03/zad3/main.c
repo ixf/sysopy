@@ -33,7 +33,7 @@ int main(int argc, char** argv){
   pid_t t;
   int status;
   char* args[64];
-  struct rusage usage_end, usage_start;
+  struct rusage usage_end; // usage_start;
 
   while( getline(&line, &n, f) != -1 ){
 
@@ -54,7 +54,9 @@ int main(int argc, char** argv){
       setrlimit(RLIMIT_AS, &mem_limit);
 
       printf("$ ");
-      for(int j = 0; args[j] != NULL; j++)
+
+      int j;
+      for(j = 0; args[j] != NULL; j++)
 	printf("%s ", args[j]);
       printf("\n");
 
