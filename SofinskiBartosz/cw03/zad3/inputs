@@ -1,0 +1,6 @@
+ack 3 12 
+echo    kappa
+alloc 256
+alloc 1024
+alloc 25555
+false
