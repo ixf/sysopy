@@ -7,18 +7,21 @@
 static int wait = 0;
 
 typedef void (*sighandler_t)(int);
+pid_t p;
 
-sighandler_t handleInt(int signum){
+void handleINT(int signum){
+  kill(p, 9);
   printf("\nOtrzymano SIGINT\n");
   exit(0);
 }
 
-sighandler_t handlePause(int signum){
-  printf("%d\n", signum);
-
+void handleTSTP(int signum){
+  //printf("%d\n", signum);
+  printf("\n");
   if(signum == SIGTSTP){
     if(wait == 0){
 
+      kill(p, 9);
       printf("\nOczekuje na:\nCTRL+Z - kontynuacja\nCTR+C - zakonczenie programu\n");
       wait = 1;
 
@@ -28,33 +31,37 @@ sighandler_t handlePause(int signum){
       while(wait){
 	sigsuspend(&empty_mask);
       }
-    } else
+      p = fork();
+      if( p == 0 ){
+
+	execlp("date.sh", "date.sh", NULL);
+	exit(2);
+
+      }
+    } else {
       wait = 0;
-  } else if (signum == SIGINT && wait == 1){
-    exit(0);
+    }
   }
-  return 0;
 }
 
-
 int main(){
-  signal(SIGINT, *handleInt);
+  signal(SIGINT, *handleINT);
 
   struct sigaction act; 
-  act.sa_handler = handlePause; 
+  act.sa_handler = handleTSTP; 
   sigemptyset(&act.sa_mask); 
   act.sa_flags = 0; 
   sigaction(SIGTSTP, &act, NULL); 
 
-  while(1){
-    pid_t p = fork();
-    if( p == 0 ){
-      execlp("date", "date", "+%H:%M", NULL);
-      exit(2);
-    }
-    sleep(1);
+  p = fork();
+  if( p == 0 ){
+    execlp("date.sh", "date.sh", NULL);
+    exit(2);
   }
 
+  while(1){
+    sleep(10);
+  }
 
   return 0;
 }
