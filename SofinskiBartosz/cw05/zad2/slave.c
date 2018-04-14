@@ -18,13 +18,23 @@ int main(int argc, char** argv){
   int N = strtol(argv[2], NULL, 10);
   if( !f ) FAIL("failed to open file!\n");
 
-  const char *t = "eyy slave here\n\0";
+  char buf[64];
+  sprintf(buf, "%d", getpid());
+  char* date_buf = index(buf, 0);
+  *date_buf = ' ';
+  date_buf += 1;
+  
   srand(time(NULL));
 
   while(N > 0){
     sleep( rand()%3+2 );
-    write(f, t, 20 );
+    FILE* fork = popen("date +%H:%M:%S", "r");
+    fread(date_buf, 64, 1, fork);
+    *index(buf,'\n') = 0;
+    printf("%s\n", buf);
+    write(f, buf, 20 );
     N-=1;
+    pclose(fork);
   }
 
   close(f);

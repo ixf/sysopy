@@ -14,13 +14,12 @@ int main(int argc, char** argv){
 
   if(argc < 2) FAIL("not enough arguments!\n");
   mkfifo(argv[1], 0666);
-  int f = open(argv[1], O_RDONLY);
+  int f = open(argv[1], O_RDWR);// O_RDONLY);
   if( !f ) FAIL("file does not exist!\n");
 
   char buf[512];
 
   while(1){
-    sleep(1);
     if (read(f, buf, 512) > 0)
 	printf("%s\n", buf);
   }
