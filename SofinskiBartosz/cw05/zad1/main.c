@@ -6,16 +6,17 @@
 #include <string.h>
 
 #define FAIL(text, ...) { fprintf(stderr, text, ##__VA_ARGS__); exit(1); }
+#define PFAIL(text) { perror(text); exit(1); }
 
 int main(int argc, char** argv){
 
-  if(argc < 2) FAIL("not enough arguments!\n");
+  if(argc < 2) FAIL("not enough arguments\n");
   FILE* f = fopen(argv[1], "r");
-  if( !f ) FAIL("file does not exist!\n");
+  if( !f ) PFAIL("fopen fails");
 
   char* line = NULL;
   size_t n = 0;
-  int status;
+  int status, code;
   char* args[16][16]; // wskazniki na kolejne argumenty kolejnych polecen w jednej linii
   // np. args[0][0] args[0][1] args[0][2]==NULL | args[1][0] args[1][1]==NULL | args[2][0] args[2][1] args[2][1] args[2][2]==NULL | args[3][0]==NULL
 
@@ -72,7 +73,7 @@ int main(int argc, char** argv){
 	close(pipes[i%2][0]);
 	close(pipes[i%2][1]);
       }
-      if( i < p && pipe(pipes[i%2]) < 0 ) perror("failed to pipe\n");
+      if( i < p && pipe(pipes[i%2]) < 0 ) PFAIL("pipe fails");
 
       if ( fork() == 0 ){ // child
 
@@ -90,11 +91,8 @@ int main(int argc, char** argv){
 	exit(1);
       } else if(i > 0){ // dla kazdego poza pierwszym
 	  wait(&status);
-	  int code;
-	  if( WIFEXITED(status) && (code = WEXITSTATUS(status)) != 0 ){
-	    printf("Error: %s has returned %d\n", args[i-1][0], code);
-	    return -1;
-	  }
+	  if( WIFEXITED(status) && (code = WEXITSTATUS(status)) != 0 )
+	    FAIL("Error: %s has returned %d\n", args[i-1][0], code);
 	}
     } 
     for(int x = 0; x < 4; x++)
@@ -102,11 +100,8 @@ int main(int argc, char** argv){
 
     // oczekuj na zamkniecie ostatniego procesu
     wait(&status);
-    int code;
-    if( WIFEXITED(status) && (code = WEXITSTATUS(status)) != 0 ){
-      printf("Error: %s has returned %d\n", args[p][0], code);
-      return -1;
-    }
+    if( WIFEXITED(status) && (code = WEXITSTATUS(status)) != 0 )
+      FAIL("Error: %s has returned %d\n", args[p][0], code);
   }
   free(line);
   fclose(f);

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-
 #include <sys/wait.h>
 
 pid_t p;
