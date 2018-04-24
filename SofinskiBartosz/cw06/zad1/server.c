@@ -33,7 +33,7 @@ int main(int argc, char** argv){
 
   signal(SIGINT, shut0);
 
-  key_t k = ftok( getenv("$HOME"), 's');
+  key_t k = ftok( getenv("$HOME"), KEY_BYTE);
 
   struct msg msg;
   msg.mtype = 1;
@@ -42,14 +42,11 @@ int main(int argc, char** argv){
   if( q == -1 ) FAIL("error at msgget");
 
   int bytes_read;
-  while( (bytes_read = msgrcv(q, &msg, 68, 0, flags)) > 0 ){
-    printf("%ld\n", msg.mtype);
-    printf("%d\n", msg.id);
-    printf("%s\n", msg.buf);
+  while( (bytes_read = msgrcv(q, &msg, MAX_TOTAL_SIZE, 0, flags)) > 0 ){
 
     int pid = msg.id;
     int client_q = -1;
-    char output[64];
+    char output[MAX_BUF_SIZE];
     char* a = msg.buf;
     char calc_ops[] = "+-*/";
     char* b;
@@ -64,7 +61,7 @@ int main(int argc, char** argv){
     }
 
     if ( current_id < 16 && client_q == -1 ){
-      // dodawanie nowego
+      printf("Nowy klient o id: %d\n", current_id);
       client_q = *(int*)msg.buf;
       client_qs[current_id] = client_q;
       client_pids[current_id] = pid;
@@ -73,6 +70,9 @@ int main(int argc, char** argv){
       msg.id = current_id;
     } else {
 
+      printf("Msg od klienta o id: %d\n", msg.id);
+      printf("Typ: %ld\n", msg.mtype);
+      printf("Zawartosc: %s\n", msg.buf);
       // faktyczne przetwarzanie zawartosci wiadomosci
 
       switch( msg.mtype ){
@@ -87,7 +87,7 @@ int main(int argc, char** argv){
       case TIME:
 
 	date_process = popen("date +%H:%M:%S%n", "r");
-	fread( output, 64, 1, date_process );
+	fread( output, MAX_BUF_SIZE, 1, date_process );
 	pclose(date_process);
 
 	*index( output, '\n') = 0;
@@ -98,7 +98,7 @@ int main(int argc, char** argv){
 	b = strpbrk(a, calc_ops);
 	if ( b == NULL){
 	  strcpy( msg.buf, "error");
-	  msgsnd( client_q, &msg, 68, 0);
+	  msgsnd( client_q, &msg, MAX_TOTAL_SIZE, 0);
 	  continue;
 	}
 	char op = *b;
@@ -126,7 +126,7 @@ int main(int argc, char** argv){
       strcpy( msg.buf, output );
     }
 
-    msgsnd( client_q, &msg, 68, 0);
+    msgsnd( client_q, &msg, MAX_TOTAL_SIZE, 0);
   }
 
   if ( errno == ENOMSG ) shut(0);

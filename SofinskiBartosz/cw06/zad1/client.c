@@ -12,7 +12,7 @@
 
 FILE* f;
 int my_id = -1;
-int q = -1;
+int sq, q = -1;
 
 int startWith(const char* a, const char* b){
   while( a != NULL && *a != ' '){
@@ -25,15 +25,19 @@ int startWith(const char* a, const char* b){
 
 void shut(int r){
 
+  struct msg msg;
+  msg.mtype = STOP;
+  msg.id = getpid();
+  msgsnd(sq, &msg, MAX_TOTAL_SIZE, 0);
+
   msgctl(q, IPC_RMID, NULL);
-  if( f != stdin) fclose(f);
+  if( f != stdin ) fclose(f);
   exit(r);
 }
 void shut0(){ shut(0); }
 
 
 int main(int argc, char** argv){
-
 
   signal(SIGINT, shut0);
 
@@ -44,7 +48,7 @@ int main(int argc, char** argv){
 
   key_t k = ftok( getenv("$HOME"), 's');
 
-  int sq = msgget(k, 0644);
+  sq = msgget(k, 0644);
   q = msgget(IPC_PRIVATE, 0644);
 
   if( sq == -1 ) FAIL("error at msgget -- server");
@@ -56,31 +60,31 @@ int main(int argc, char** argv){
   msg.id = getpid();
   char delim = ' ';
 
-  if( msgsnd(sq, &msg, 68, 0) == -1) FAIL("error at msgsnd -- init");
-  msgrcv( q, &msg, 68, 0, 0);
-  char tmp[64];
+  if( msgsnd(sq, &msg, MAX_TOTAL_SIZE, 0) == -1) FAIL("error at msgsnd -- init");
+  msgrcv( q, &msg, MAX_TOTAL_SIZE, 0, 0);
+  char tmp[MAX_BUF_SIZE];
 
-  while( fgets( tmp, 68, f ) > 0 ){
+  while( fgets( tmp, MAX_TOTAL_SIZE, f ) > 0 ){
 
     *index(tmp, '\n') = 0;
+    if( tmp[0] == 0 ) continue;
     char* op = strtok(tmp, &delim);
     msg.mtype = -1;
     if( strcmp(op, "MIRROR") == 0 ) msg.mtype = MIRROR;
     else if( strcmp(op, "TIME") == 0 ) msg.mtype = TIME;
     else if( strcmp(op, "CALC") == 0 ) msg.mtype = CALC;
     else if( strcmp(op, "END") == 0 ) msg.mtype = END;
-    else if( strcmp(op, "STOP") == 0 ) msg.mtype = STOP;
     
     if( msg.mtype != -1 ){
       op = index(op, 0);
       op++;
       strcpy(msg.buf, op);
       msg.id = getpid();
-      if( msgsnd(sq, &msg, 68, 0) == -1) FAIL("error at msgsnd -- loop");
-      msgrcv(q, &msg, 68, 0, 0);
+      if( msgsnd(sq, &msg, MAX_TOTAL_SIZE, 0) == -1) FAIL("error at msgsnd -- loop");
+      msgrcv(q, &msg, MAX_TOTAL_SIZE, 0, 0);
       printf("%s\n", msg.buf);
     }
-    if ( msg.mtype == STOP ) shut(0);
+    if ( msg.mtype == END ) shut(0);
   }
 
   shut(0);

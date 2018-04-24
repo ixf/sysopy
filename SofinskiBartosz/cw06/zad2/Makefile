@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99 -D_XOPEN_SOURCE -lrt
+CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE -lrt
 
 all: server client
 
