@@ -25,4 +25,5 @@ int main(int argc, char** argv){
 
   close(f);
   unlink(argv[1]);
+  return 0;
 }

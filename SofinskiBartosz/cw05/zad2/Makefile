@@ -12,7 +12,7 @@ all: master slave
 .PHONY: clean
 
 clean:
-	rm -rf *.o main
+	rm -rf *.o master slave
 
 dbg:
 	gdb --args ./main inputs

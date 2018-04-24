@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99 -D_XOPEN_SOURCE
+CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE
 
-all: main
+all: server client
 
 %: %.o
 	$(CC) $^ -o $@
@@ -12,8 +12,4 @@ all: main
 .PHONY: clean
 
 clean:
-	rm -rf *.o main
-
-dbg:
-	gdb --args ./main inputs
-
+	rm -rf *.o client server

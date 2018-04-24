@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -std=c99
 
 all: main
 
@@ -13,7 +13,5 @@ all: main
 
 clean:
 	rm -rf *.o main
-
-dbg:
-	gdb --args ./main inputs
+	rm -f out
 

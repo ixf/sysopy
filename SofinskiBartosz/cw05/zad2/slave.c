@@ -39,4 +39,5 @@ int main(int argc, char** argv){
   }
 
   close(f);
+  return 0;
 }
