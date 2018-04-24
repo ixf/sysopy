@@ -8,7 +8,7 @@
 #include <signal.h>
 #include "msg.h"
 
-#define FAIL(a) { perror(a); shut(1); }
+#define FAIL(a) { perror(a); exit(1); }
 
 FILE* f;
 int my_id = -1;
@@ -23,7 +23,7 @@ int startWith(const char* a, const char* b){
   return 1;
 }
 
-void shut(int r){
+void shut(){
 
   struct msg msg;
   msg.mtype = STOP;
@@ -32,14 +32,15 @@ void shut(int r){
 
   msgctl(q, IPC_RMID, NULL);
   if( f != stdin ) fclose(f);
-  exit(r);
 }
-void shut0(){ shut(0); }
+
+void sigintHandler(){ exit(0); }
 
 
 int main(int argc, char** argv){
 
-  signal(SIGINT, shut0);
+  atexit(shut);
+  signal(SIGINT, sigintHandler);
 
   f = stdin;
   if( argc == 2 ){
@@ -84,8 +85,8 @@ int main(int argc, char** argv){
       msgrcv(q, &msg, MAX_TOTAL_SIZE, 0, 0);
       printf("%s\n", msg.buf);
     }
-    if ( msg.mtype == END ) shut(0);
+    if ( msg.mtype == END ) exit(0);
   }
 
-  shut(0);
+  exit(0);
 }

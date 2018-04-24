@@ -9,19 +9,19 @@
 #include <errno.h>
 #include "msg.h"
 
-#define FAIL(a) { perror(a); shut(1); }
+#define FAIL(a) { perror(a); exit(1); }
 
 int current_id = 0;
 int client_pids[16];
 int client_qs[16];
 int q;
 
-void shut(int r){
+void shut(){
 
   msgctl(q, IPC_RMID, NULL);
-  exit(r);
+
 }
-void shut0(){ shut(0); }
+void sigintHandler(){ exit(0); }
 
 
 int main(int argc, char** argv){
@@ -31,7 +31,8 @@ int main(int argc, char** argv){
     client_pids[i] = -1;
   }
 
-  signal(SIGINT, shut0);
+  atexit(shut);
+  signal(SIGINT, sigintHandler);
 
   key_t k = ftok( getenv("$HOME"), KEY_BYTE);
 
@@ -129,7 +130,7 @@ int main(int argc, char** argv){
     msgsnd( client_q, &msg, MAX_TOTAL_SIZE, 0);
   }
 
-  if ( errno == ENOMSG ) shut(0);
+  if ( errno == ENOMSG ) exit(0);
   else FAIL("error at msgrcv");
 
 }

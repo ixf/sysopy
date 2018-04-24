@@ -9,7 +9,7 @@
 #include <time.h>
 #include "msg.h"
 
-#define FAIL(a) { perror(a); shut(1); }
+#define FAIL(a) { perror(a); exit(0); }
 
 mqd_t q, sq;
 FILE* f;
@@ -20,14 +20,15 @@ void shut(){
   mq_close(sq);
   mq_close(q);
   mq_unlink(q_name);
-
-  exit(0);
 }
-void shut0(){ shut(0); }
+
+void sigintHandler(){ exit(0); }
 
 int main(int argc, char** argv){
 
-  signal(SIGINT, shut0);
+  if( atexit( shut ) != 0 ) FAIL("atexit failed");
+
+  signal(SIGINT, sigintHandler);
   srand(time(NULL));
 
   f = stdin;
@@ -82,10 +83,10 @@ int main(int argc, char** argv){
       if( mq_receive(q, msg, MAX_BUF_SIZE, 0) == -1) FAIL("error at mq_receive - loop");
       printf("%s\n", msg+2);
     }
-    if ( msg[1] == END ) shut(0);
+    if ( msg[1] == END ) exit(0);
   }
 
-  shut(0);
+  exit(0);
   return 0;
 }
 

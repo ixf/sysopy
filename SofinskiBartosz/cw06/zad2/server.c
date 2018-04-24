@@ -14,18 +14,23 @@ int current_id = 0;
 mqd_t client_qs[16];
 mqd_t q;
 
-#define FAIL(a) { perror(a); shut(1); }
+#define FAIL(a) { perror(a); exit(1); }
 
-void shut(int r){
+void shut(){
+
+  for(int i = 0; i < current_id; i++){
+    mq_close( client_qs[i] );
+  }
 
   mq_close(q);
   mq_unlink("/serwer");
-
-  exit(r);
 }
-void shut0(){ shut(0); }
+
+void sigintHandler(){ exit(0); }
 
 int main(){
+
+  if( atexit( shut ) != 0 ) FAIL("atexit failed");
 
   struct mq_attr attr;
   attr.mq_flags = 0;
@@ -36,7 +41,7 @@ int main(){
   q = mq_open("/serwer", O_RDWR | O_CREAT, 0644, &attr);
   if( q == (mqd_t)-1) FAIL("mq_open fails");
 
-  signal(SIGINT, shut0);
+  signal(SIGINT, sigintHandler);
   char msg[64];
 
   while( mq_receive(q, msg, 64, NULL) > 0){
@@ -116,8 +121,7 @@ int main(){
       mq_setattr( q, &attr, NULL );
       break;
     case STOP:
-      //mq_close( 
-      //mq_unlink( client_q, IPC_RMID, NULL);
+      mq_close( client_q );
       break;
     }
     strcpy( msg+2, output );
@@ -127,7 +131,7 @@ int main(){
 
   if ( 0 ) FAIL("mq_receive fails");
 
-  shut(0);
+  exit(0);
   return 0;
 }
 
