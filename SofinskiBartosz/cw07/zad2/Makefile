@@ -1,10 +1,13 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE -lrt
+CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE -lpthread -lrt
 
-all: shm
+all: golibroda klienci
 
-%: %.o
-	$(CC) $^ -o $@
+golibroda: golibroda.o init_shared.o
+	$(CC) $(CFLAGS) $^ -o $@
+
+klienci: klienci.o init_shared.o
+	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
@@ -12,4 +15,4 @@ all: shm
 .PHONY: clean
 
 clean:
-	rm -rf *.o client server
+	rm -rf *.o golibroda klienci

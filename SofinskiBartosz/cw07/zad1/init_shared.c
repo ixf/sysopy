@@ -9,13 +9,14 @@
 
 #define FAIL(msg) { perror(msg); exit(1); }
 
-int semid, semid_waiting, shmid, shmid_q;
+int semid, semid_waiting, semid_seat, shmid, shmid_q;
 int* salon_queue;
-key_t k, k_q, k_waiting;
+key_t k, k_q, k_waiting, k_seat;
 
 void shut(){
   if(semctl(semid, 0, IPC_RMID) == -1) perror("semctl fails");
   if(semctl(semid_waiting, 0, IPC_RMID) == -1) perror("semctl fails");
+  if(semctl(semid_seat, 0, IPC_RMID) == -1) perror("semctl fails");
   if(shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl fails");
   if(shmctl(shmid_q, IPC_RMID, NULL) == -1) perror("shmctl fails");
 }
@@ -25,12 +26,16 @@ QueueDetails* init_shared(int flags){
   k = ftok( getenv("HOME"), 'g');
   k_q = ftok( getenv("HOME"), 'q');
   k_waiting = ftok( getenv("HOME"), 'w');
+  k_seat = ftok( getenv("HOME"), 's');
   if( k == -1) FAIL("ftok k fails");
   if( k_q == -1) FAIL("ftok k_q fails");
   if( k_waiting == -1) FAIL("ftok k_waiting fails");
+  if( k_seat == -1) FAIL("ftok k_seat fails");
 
   if( (semid = semget( k, 1, 0644 | flags )) == -1) FAIL("semget fails -- semid");
   if( (semid_waiting = semget( k_waiting, 1, 0644 | flags )) == -1) FAIL("semget fails -- semid_waiting");
+  if( (semid_seat = semget( k_seat , 1, 0644 | flags )) == -1) FAIL("semget fails -- semid_seat");
+  printf("semid_seat: %d\n", semctl(semid_seat, 0, GETVAL));
 
   QueueDetails* q;
   if ((shmid = shmget( k, sizeof(int)*4, flags | 0644)) == -1) FAIL("shmget fails -- shmid");
@@ -41,8 +46,9 @@ QueueDetails* init_shared(int flags){
   /* q->seat = shm_array + 3*sizeof(int); */
 
   q->beg = 0;
-  q->end = 0;
+  q->taken = 0;
   q->seat = 0;
+  return q;
 }
 
 void init_queue(QueueDetails* q, int flags){

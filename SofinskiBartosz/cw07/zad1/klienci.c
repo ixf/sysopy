@@ -14,7 +14,7 @@
 
 QueueDetails* q;
 int * salon_queue;
-extern int semid, semid_waiting, shmid, shmid_q;
+extern int semid, semid_waiting, semid_seat, shmid, shmid_q;
 
 void pass(){}
 
@@ -26,6 +26,11 @@ int main(int argc, char** argv){
   }
 
   signal(SIGRTMIN, pass);
+  sigset_t regular_mask, waiting_mask;
+  sigemptyset(&regular_mask);
+  sigemptyset(&waiting_mask);
+  sigaddset(&regular_mask, SIGRTMIN);
+  sigprocmask(SIG_SETMASK, &regular_mask, NULL);
 
   int N = strtol(argv[1], NULL, 10);
   int S = strtol(argv[2], NULL, 10);
@@ -37,6 +42,7 @@ int main(int argc, char** argv){
   op.sem_op = 1;
   op.sem_flg = 0;
 
+
   QueueDetails* q = init_shared(flags);
   init_queue(q, flags);
 
@@ -45,35 +51,62 @@ int main(int argc, char** argv){
 
       for( int j = 0; j < S; j++){
 
+
 	op.sem_op = -1;
+	op.sem_flg = 0;
+	semop(semid_waiting, &op, 1);
+
+	op.sem_op = 0;
 	op.sem_flg = IPC_NOWAIT;
-	if( semop(semid, &op, 1) == 0 ){ // jezeli jest wolne
-	  q->seat = getpid(); // siadaj
-	  printf("Siadam\n");
-	  pause();
-	  printf("Koniec\n");
-	} else { // ustaw sie w kolejce
-	  op.sem_op = -1;
-	  op.sem_flg = 0;
+
+	if( semop(semid, &op, 1) == 0 ){ // jezeli golibroda ma zero klientow ( spi )
+
+	  op.sem_op = 2; // 1 na obudzenie golibrody i 1 na klienta do obsluzenia
+	  semop(semid, &op, 1);
+	  op.sem_op = 1;
 	  semop(semid_waiting, &op, 1);
-	  if ( q->beg != ( q->end + 1) % (q->size)){ // kiedy niepelna
-	    int pos = q->end;
-	    q->end = ( pos + 1) % q->size;
-	    printf("Ustawiam sie na %d pozycji\n", pos);
+
+	  printf("%d: Budze golibrode\n", getpid());
+
+	  q->seat = getpid(); // siadaj
+	  op.sem_op = 1;
+	  printf("%d: Siadam na fotelu (a kolejka byla pusta)\n", getpid());
+	  semop(semid_seat, &op, 1); // po wpisaniu sie na fotel
+	  op.sem_op = -2;
+	  op.sem_flg = 0;
+	  semop(semid_seat, &op, 1); // czeka na koniec strzyzenia
+	  printf("%d: Koniec golenia\n", getpid());
+
+	} else { // ustaw sie w kolejce
+
+	  if ( q->taken != q->size){ // kiedy niepelna
+	    int pos = (q->beg + q->taken) % q->size;
+	    q->taken += 1;
 	    salon_queue[pos] = getpid();
+	    printf("%d: Ustawiam sie na %d  miejscu w kolejce ( %d fizycznie )\n", getpid(), q->taken, pos);
 
 	    op.sem_op = 1;
-	    semop(semid_waiting, &op, 1); // zwalniam blokade
+	    semop(semid_waiting, &op, 1); // zwalniam kolejke 
 
-	    pause();
-	    printf("Siadam\n");
-	    pause();
-	    printf("Koniec\n");
+	    sigsuspend(&waiting_mask);
+
+	    q->seat = getpid(); // siadaj
+	    op.sem_op = 1;
+	    printf("%d: Siadam na fotelu\n", getpid()); // wlasciwie to jest sadzany przez golibrode
+	    semop(semid_seat, &op, 1); // po wpisaniu sie na fotel
+	    op.sem_op = -2;
+	    semop(semid_seat, &op, 1); // czeka na koniec golenia
+	    printf("%d: Koniec golenia\n", getpid());
+
 	  } else {
-	    printf("kolejka pelna, opuszczam salon\n");
+	    printf("%d: kolejka pelna, opuszczam salon\n", getpid());
 	    op.sem_op = 1;
 	    semop(semid_waiting, &op, 1); // zwalniam blokade
 	  }
+	  op.sem_op = -1;
+	  op.sem_flg = IPC_NOWAIT;
+	  if( semop(semid_waiting, &op, 1) == -1) // zwalniam blokade
+	    printf("FAIL\n");
 	}
       }
       exit(0);
@@ -82,10 +115,15 @@ int main(int argc, char** argv){
   }
 
   printf("Klienci stworzeni\n");
-  for( int i = 0; i < N; i++ )
-    wait(NULL);
+  int status, ret = 0;
+  for( int i = 0; i < N; i++ ){
+    wait(&status);
+    if( WEXITSTATUS(status) == 1) ret = 1;
+  }
+
 
   printf("Koniec strzyzen\n");
+  return ret;
 
 }
 

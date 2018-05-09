@@ -9,6 +9,6 @@ typedef struct {
   int seat; //pid
 } QueueDetails;
 
-QueueDetails* init_shared(int flags);
+void init_shared(int flags);
 void init_queue(QueueDetails* q, int flags);
 
