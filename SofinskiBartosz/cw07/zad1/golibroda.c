@@ -32,6 +32,7 @@ int main(int argc, char** argv){
 
   atexit(shut);
   signal(SIGINT, exit0);
+  signal(SIGTERM, exit0);
 
   init_shared(IPC_CREAT);
   q->size = strtol(argv[1], NULL, 10);
@@ -49,13 +50,12 @@ int main(int argc, char** argv){
 	semop(sem, &cut, 1); // czekam az klient na pewno zajmie miejsce na fotelu
 	client_pid = q->seat;
 	printf("Rozpoczynam strzyrzenie %d\n", client_pid);
-	client_pid = q->seat = 0;
 	semop(sem, &done, 1);
 	printf("Koniec strzyrzenia %d\n", client_pid);
+	client_pid = q->seat = 0;
 
 	// wez potencjalne pid do strzyrzenia
 	semop(sem, &enter_wr, 1);
-	printf("%d %d %d\n", q->beg, q->taken, q->size);
 	if( q->taken > 0){ // kiedy niepusta
 	  client_pid = salon_queue[q->beg];
 	  salon_queue[q->beg] = 0;

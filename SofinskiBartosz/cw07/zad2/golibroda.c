@@ -12,10 +12,9 @@
 
 #define FAIL(msg) { perror(msg); exit(1); }
 
-extern QueueDetails* q;
+extern Salon* q;
 extern int * salon_queue;
-extern sem_t* semid, *semid_sleep, *semid_waiting;
-extern int shmid, shmid_q;
+extern sem_t* sem[8];
 
 void exit0(){ exit(0); }
 
@@ -28,56 +27,49 @@ int main(int argc, char** argv){
 
   atexit(shut);
   signal(SIGINT, exit0);
+  signal(SIGTERM, exit0);
 
-  int flags = O_CREAT;
-
-  init_shared(flags);
+  init_shared(O_CREAT);
   q->size = strtol(argv[1], NULL, 10);
-  init_queue(q, flags);
+  init_queue(O_CREAT);
 
   int client_pid;
-
-  // domyslnie 1, czekamy na zero
-  // 1 oznacza wolny fotel
-  // 0 oznacza zajety + golibroda zarzadza fotelem i kolejka
-
-  int nowait = 0; // flaga przez ktora wybieramy wait lub trywait
+  sem_post(sem[enter_wr]);
+  q->sleeping = 1;
 
   while(1){
 
-    int slept = (nowait) ? sem_trywait(semid_sleep) : sem_wait(semid_sleep);
-
-    if ( slept == 0 ){
-      printf("Jest klient!\n");
-      // shm_seat jest zajete, kolejka nas na razie nie interesuje
-      while(q->seat == 0){}
-      client_pid = q->seat;
+    if ( sem_wait(sem[sleeping]) == 0 ){
+      printf("Golibroda sie budzi\n");
 
       do{
 
-	//sleep(1); // strzyzenie
-	kill(client_pid, SIGRTMIN); // koniec strzyzenia
+	sem_wait(sem[cut]);
+	client_pid = q->seat;
+	printf("Rozpoczynam strzyrzenie %d\n", client_pid);
+	sem_post(sem[leave]);
+	printf("Koniec strzyrzenia %d\n", client_pid);
 	client_pid = q->seat = 0;
 
 	// wez potencjalne pid do strzyrzenia
+	sem_wait(sem[enter_wr]);
 	if( q->taken > 0){ // kiedy niepusta
-
 	  client_pid = salon_queue[q->beg];
 	  salon_queue[q->beg] = 0;
 	  q->beg = ( q->beg + 1 ) % q->size;
 	  q->taken -= 1;
+	  printf("Zapraszam %d\n", client_pid);
 	  kill(client_pid, SIGRTMIN); // zapros na fotel
 	  q->seat = client_pid;
 	}
+
+	if( client_pid == 0 )
+	  q->sleeping = 1;
+	sem_post(sem[enter_wr]);
+
       } while( client_pid != 0 );
 
-      sem_post(semid);
-
-      nowait = 1;
-    } else {
-      // golibroda śpi
-      nowait = 0;
-      printf("Zasypiam...\n");
+      printf("Golibroda zasypia\n");
     }
 
   }

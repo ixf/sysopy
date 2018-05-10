@@ -13,10 +13,9 @@
 
 #include "init_shared.h"
 
-extern QueueDetails* q;
+extern Salon* q;
 extern int * salon_queue;
-extern sem_t* semid, *semid_waiting, *semid_sleep;
-extern int shmid, shmid_q;
+extern sem_t* sem[8];
 
 void pass(){}
 
@@ -28,47 +27,58 @@ int main(int argc, char** argv){
   }
 
   signal(SIGRTMIN, pass);
+  sigset_t regular_mask, waiting_mask;
+  sigemptyset(&regular_mask);
+  sigemptyset(&waiting_mask);
+  sigaddset(&regular_mask, SIGRTMIN);
+  sigprocmask(SIG_SETMASK, &regular_mask, NULL);
 
   int N = strtol(argv[1], NULL, 10);
   int S = strtol(argv[2], NULL, 10);
 
-  int flags = 0;
-
-  init_shared(flags);
-  init_queue(q, flags);
+  init_shared(0);
+  init_queue(0);
 
   for( int i = 0; i < N; i++){
     if ( fork() == 0 ){
 
       for( int j = 0; j < S; j++){
 
-	int val;
-	sem_getvalue(semid, &val);
-	printf("semid: %d\n", val);
+	sem_wait(sem[enter_wr]);
 
-	if( sem_trywait(semid) == 0 ){ // jezeli jest wolne
-	  sem_post(semid_sleep); // obudz golibrode
-	  q->seat = getpid(); // siadaj
-	  printf("Siadam a kolejka pusta\n");
-	  pause();
-	  printf("Koniec\n");
-	} else { // ustaw sie w kolejce
-	  sem_wait(semid_waiting);
+	if( q->sleeping == 1 ){ // jezeli jest wolne
+
+	  q->sleeping = 0;
+	  sem_post(sem[sleeping]);
+	  sem_post(sem[enter_wr]);
+
+	  q->seat = getpid();
+	  printf("%d: Siadam na fotelu (a kolejka byla pusta)\n", getpid());
+	  sem_post(sem[cut]); 
+	  sem_wait(sem[leave]);
+	  printf("%d: Koniec golenia\n", getpid());
+
+	} else {
+
+	  // ustaw sie w kolejce
 	  if ( q->taken != q->size){ // kiedy niepelna
 	    int pos = (q->beg + q->taken) % q->size;
 	    q->taken += 1;
-	    printf("Ustawiam sie na %d pozycji\n", pos);
+	    printf("%d: Ustawiam sie na %d  miejscu w kolejce ( %d fizycznie )\n", getpid(), q->taken, pos);
 	    salon_queue[pos] = getpid();
 
-	    sem_post(semid_waiting);
+	    sem_post(sem[enter_wr]);
 
-	    pause();
-	    printf("Siadam\n");
-	    pause();
-	    printf("Koniec\n");
+	    sigsuspend(&waiting_mask);
+	    q->seat = getpid();
+	    printf("%d: Siadam na fotelu\n", getpid());
+	    sem_post(sem[cut]); 
+	    sem_wait(sem[leave]);
+	    printf("%d: Koniec golenia\n", getpid());
+
 	  } else {
-	    printf("kolejka pelna, opuszczam salon\n");
-	    sem_post(semid_waiting);
+	    sem_post(sem[enter_wr]);
+	    printf("%d: kolejka pelna, opuszczam salon\n", getpid());
 	  }
 	}
       }

@@ -91,15 +91,12 @@ int main(int argc, char** argv){
   }
 
   printf("Klienci stworzeni\n");
-  int status, ret = 0;
   for( int i = 0; i < N; i++ ){
-    wait(&status);
-    if( WEXITSTATUS(status) == 1) ret = 1;
-  }
+    wait(NULL);
 
 
   printf("Koniec strzyzen\n");
-  return ret;
+  return 0;
 
 }
 
