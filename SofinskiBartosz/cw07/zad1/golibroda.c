@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <assert.h>
-
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -13,15 +11,17 @@
 
 #define FAIL(msg) { perror(msg); exit(1); }
 
-QueueDetails* q;
-int * salon_queue;
-extern int semid, semid_waiting, semid_seat, shmid, shmid_q;
-// semid stan golibrody.
-// waiting blokada na kolejke
-// seat fotel do golenia
+int client_pid;
+extern volatile Salon* q;
+extern volatile int * salon_queue;
+extern struct sembuf sleeping, wake, sit_down, cut, leave, done, enter_wr, leave_wr;
+extern int sem, shmid, shmid_q;
+// waiting blokada na pamiec wspolna
+// seat fotel do golenia + stan golenia
 
-
-void exit0(){ exit(0); }
+void exit0(){
+  exit(0);
+}
 
 int main(int argc, char** argv){
 
@@ -33,50 +33,29 @@ int main(int argc, char** argv){
   atexit(shut);
   signal(SIGINT, exit0);
 
-  int flags = IPC_CREAT;
-
-  struct sembuf op;
-  op.sem_num = 0;
-  op.sem_flg = 0;
-
-  q = init_shared(flags);
+  init_shared(IPC_CREAT);
   q->size = strtol(argv[1], NULL, 10);
-  init_queue(q, flags);
+  init_queue(IPC_CREAT);
 
-  int client_pid;
-
-  op.sem_op = 1;
-  //semop(semid, &op, 1);
-  semop(semid_waiting, &op, 1);
-  // semop(semid_seat, &op, 1);
-  // domyslnie 1, czekamy na zero
-  // 1 oznacza wolny fotel
-  // 0 oznacza zajety + golibroda zarzadza fotelem
-
+  semop(sem, &leave_wr, 1);
 
   while(1){
-    op.sem_op = -1;
-    if( semop(semid, &op, 1) == 0 ){
+
+    if( semop(sem, &sleeping, 1) == 0 ){
       printf("Golibroda sie budzi\n");
 
       do{
 
-	printf("Stan seat: %d\n", semctl(semid_seat, 0, GETVAL));
-	op.sem_flg = 0;
-	op.sem_op = -1;
-	semop(semid_seat, &op, 1); // czekam az klient na pewno zajmie miejsce na fotelu
+	semop(sem, &cut, 1); // czekam az klient na pewno zajmie miejsce na fotelu
 	client_pid = q->seat;
 	printf("Rozpoczynam strzyrzenie %d\n", client_pid);
-	sleep(1); // strzyzenie
-	op.sem_op = 2;
-	semop(semid_seat, &op, 1); // koniec strzyzenia
-	printf("Koniec strzyrzenia %d\n", client_pid);
 	client_pid = q->seat = 0;
+	semop(sem, &done, 1);
+	printf("Koniec strzyrzenia %d\n", client_pid);
 
 	// wez potencjalne pid do strzyrzenia
-	op.sem_op = -1;
-	op.sem_flg = 0;
-	semop(semid_waiting, &op, 1);
+	semop(sem, &enter_wr, 1);
+	printf("%d %d %d\n", q->beg, q->taken, q->size);
 	if( q->taken > 0){ // kiedy niepusta
 	  client_pid = salon_queue[q->beg];
 	  salon_queue[q->beg] = 0;
@@ -85,16 +64,14 @@ int main(int argc, char** argv){
 	  printf("Zapraszam %d\n", client_pid);
 	  kill(client_pid, SIGRTMIN); // zapros na fotel
 	}
-	op.sem_op = 1;
-	semop(semid_waiting, &op, 1);
+
+	if( client_pid == 0 )
+	  q->sleeping = 1;
+	semop(sem, &leave_wr, 1);
 
       } while( client_pid != 0 );
 
       // nie ma wiecej klientow
-
-      op.sem_flg = IPC_NOWAIT;
-    } else {
-      op.sem_flg = 0;
       printf("Golibroda zasypia\n");
     }
   }
