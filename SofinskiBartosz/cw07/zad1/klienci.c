@@ -93,6 +93,7 @@ int main(int argc, char** argv){
   printf("Klienci stworzeni\n");
   for( int i = 0; i < N; i++ ){
     wait(NULL);
+  }
 
 
   printf("Koniec strzyzen\n");
