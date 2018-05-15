@@ -15,7 +15,20 @@
 
 extern Salon* q;
 extern int * salon_queue;
-extern sem_t* sem[8];
+extern sem_t* sem[4];
+
+
+
+struct timespec tp;
+char timebuf[64];
+
+char* get_timebuf(){
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  sprintf(timebuf, "%ld.%09ld", tp.tv_sec, tp.tv_nsec);
+  return timebuf;
+}
+
+
 
 void pass(){}
 
@@ -53,10 +66,10 @@ int main(int argc, char** argv){
 	  sem_post(sem[enter_wr]);
 
 	  q->seat = getpid();
-	  printf("%d: Siadam na fotelu (a kolejka byla pusta)\n", getpid());
+	  printf("%s %d: Siadam na fotelu (a kolejka byla pusta)\n", get_timebuf(), getpid());
 	  sem_post(sem[cut]); 
 	  sem_wait(sem[leave]);
-	  printf("%d: Koniec golenia\n", getpid());
+	  printf("%s %d: Koniec golenia\n", get_timebuf(), getpid());
 
 	} else {
 
@@ -64,21 +77,21 @@ int main(int argc, char** argv){
 	  if ( q->taken != q->size){ // kiedy niepelna
 	    int pos = (q->beg + q->taken) % q->size;
 	    q->taken += 1;
-	    printf("%d: Ustawiam sie na %d  miejscu w kolejce ( %d fizycznie )\n", getpid(), q->taken, pos);
+	    printf("%s %d: Ustawiam sie na %d  miejscu w kolejce ( %d fizycznie )\n", get_timebuf(), getpid(), q->taken, pos);
 	    salon_queue[pos] = getpid();
 
 	    sem_post(sem[enter_wr]);
 
 	    sigsuspend(&waiting_mask);
 	    q->seat = getpid();
-	    printf("%d: Siadam na fotelu\n", getpid());
+	    printf("%s %d: Siadam na fotelu\n", get_timebuf(), getpid());
 	    sem_post(sem[cut]); 
 	    sem_wait(sem[leave]);
-	    printf("%d: Koniec golenia\n", getpid());
+	    printf("%s %d: Koniec golenia\n", get_timebuf(), getpid());
 
 	  } else {
 	    sem_post(sem[enter_wr]);
-	    printf("%d: kolejka pelna, opuszczam salon\n", getpid());
+	    printf("%s %d: kolejka pelna, opuszczam salon\n", get_timebuf(), getpid());
 	  }
 	}
       }

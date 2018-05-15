@@ -20,7 +20,7 @@ int threads;
 void* splot(void* thread_num_param){
   int thread_num = *(int*)thread_num_param;
 
-  //if( thread_num == 5 ) return NULL;
+  if( thread_num == 5 ) return NULL;
   printf("%d\n", thread_num);
 
   double s;
@@ -33,10 +33,10 @@ void* splot(void* thread_num_param){
         for (int j = 0; j < C; j++ ){
           int index_x = CLAMP(0, x-(int)ceil(C/2)+i, N-1);
           int index_y = CLAMP(0, y-(int)ceil(C/2)+j, M-1);
-          s += I[index_x][index_y] * K[i][j];
+          s += I[index_y][index_x] * K[j][i];
         }
       }
-      J[x][y] = round(s);
+      J[y][x] = round(s);
     }
   }
 
@@ -94,7 +94,7 @@ int main(int argc, char** argv){
   }
   fclose(f);
 
-  // WORK
+  // THREADING AND FILTERING
 
   pthread_t* handles = malloc(threads * sizeof(pthread_t));
 
@@ -106,9 +106,7 @@ int main(int argc, char** argv){
 
   for(int i = 0; i < threads; i++){
     void* x;
-    printf("waiting...\n");
     pthread_join(handles[i], &x);
-    printf("done...\n");
   }
 
   // OUT FILE
