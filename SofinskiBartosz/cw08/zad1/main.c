@@ -4,8 +4,11 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "timing.h"
+
 #define LEAVE(msg) { printf(msg); exit(1); }
 #define FAIL(msg) { perror(msg); exit(2); }
+
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define CLAMP(a,b,c) MAX((a),MIN((b),(c)))
@@ -19,9 +22,6 @@ int threads;
 
 void* splot(void* thread_num_param){
   int thread_num = *(int*)thread_num_param;
-
-  if( thread_num == 5 ) return NULL;
-  printf("%d\n", thread_num);
 
   double s;
 
@@ -59,7 +59,7 @@ int main(int argc, char** argv){
   int val;
   float fval;
 
-  // PICUTRE FILE
+  // czytanie z pliku wejsciowego
   if( fscanf(f, "%s%*[ \n\t]", word) < 1 || strcmp("P2", word) != 0)
     LEAVE("Wrong picture format (1)\n");
 
@@ -78,7 +78,7 @@ int main(int argc, char** argv){
   }
   fclose(f);
 
-  // FILTER FILE
+  // czytanie z pliku filtru
   if( (f = fopen(filter_filename, "r")) == NULL) FAIL("fopen");
 
   if(fscanf(f, "%d\n", &C) < 1)
@@ -94,9 +94,11 @@ int main(int argc, char** argv){
   }
   fclose(f);
 
-  // THREADING AND FILTERING
+  // watki i filtrowanie
 
   pthread_t* handles = malloc(threads * sizeof(pthread_t));
+
+  start_time(); // funkcja z pliku timing.c ( dziala na zmiennych statycznych )
 
   for(int i = 0; i < threads; i++){
     int* param = malloc(sizeof(int));
@@ -109,16 +111,17 @@ int main(int argc, char** argv){
     pthread_join(handles[i], &x);
   }
 
-  // OUT FILE
+  end_time();
+
+  // wpis do pliku wyjsciowego
   if( (f = fopen(output_filename, "w")) == NULL) FAIL("fopen");
 
   fprintf(f, "P2\n%d %d\n255\n", N, M);
 
   for(int y = 0; y < M; y++){
     for(int x = 0; x < N; x++){
-      fprintf(f, "%d ", J[y][x]);
+      fprintf(f, "%d\n", J[y][x]);
     }
-    fprintf(f, "\n");
   }
   fclose(f);
 

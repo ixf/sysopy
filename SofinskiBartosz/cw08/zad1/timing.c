@@ -1,16 +1,17 @@
 
 #include "timing.h"
-#include <sys/times.h>
+#include <time.h>
 #include <stdio.h>
 
-static struct tms start_tms, end_tms;
+static struct timespec start_tp, end_tp;
 
 void start_time(){
-  times(&start_tms);
+  clock_gettime(CLOCK_MONOTONIC, &start_tp);
 }
 
 void end_time(){
-  times(&end_tms);
-  printf("User time:\t%011ld\n",  end_tms.tms_utime - start_tms.tms_utime);
-  printf("System time:\t%011ld\n",  end_tms.tms_stime - start_tms.tms_stime);
+  clock_gettime(CLOCK_MONOTONIC, &end_tp);
+  printf("Real time:\t%f\n",
+      end_tp.tv_sec - start_tp.tv_sec +
+      + ( end_tp.tv_nsec - start_tp.tv_nsec) / 1000000000.0);
 }

@@ -3,18 +3,30 @@
 #include <pthread.h>
 #include <time.h>
 
-void func(void* x){
-  printf("%d\n", *(int*)x);
+FILE* f;
+void* func(void* x){
+  char buf[128];
+  if( fgets(buf, 128, f) > 0 ) {
+    printf("%02d %s", *(int*)x, buf);
+  }
+  return NULL;
 }
 
 int main(){
 
-  int x = 2;
+  f = fopen("threads.c","r");
   pthread_t handle;
-  if( pthread_create(&handle, NULL, func, &x) != 0)
-    printf("failed\n");
+  int pnum = 50;
+  for(int i = 0; i < pnum; i++){
+    int* p = malloc(sizeof(int));
+    *p = i;
+    if( pthread_create(&handle, NULL, func, p) != 0)
+      printf("failed\n");
+  }
 
-  sleep(1);
+  void* r;
+  for(int i = 0; i < pnum; i++)
+    pthread_join(handle, &r);
 
 }
 

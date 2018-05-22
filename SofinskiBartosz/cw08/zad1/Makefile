@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE -lpthread -lm
+CFLAGS=-g -Wall -std=c99 -D_GNU_SOURCE -lpthread -lm -O3
 
-all: threads
+all: main
 
-%: %.o
+main: main.o timing.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c
