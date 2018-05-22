@@ -1,0 +1,9 @@
+Na wlasnych komputerze:
+ % ./main 1 cat.pgm filter_big out.pgm
+Real time:	1.515656
+ % ./main 2 cat.pgm filter_big out.pgm
+Real time:	0.850438
+ % ./main 4 cat.pgm filter_big out.pgm
+Real time:	0.767609
+ % ./main 8 cat.pgm filter_big out.pgm
+Real time:	0.770560
