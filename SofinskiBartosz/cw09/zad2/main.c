@@ -5,19 +5,19 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <semaphore.h>
+
 #define LEAVE(msg) { printf(msg); exit(1); }
 #define FAIL(msg) { perror(msg); exit(2); }
-
+#define SEM_BROADCAST(x) { for(int i = 0; i < K ; i++) sem_post(x); }
+#define SEM_COND_WAIT(a,b) { sem_post(b); sem_wait(a); sem_wait(b); }
 
 char** buffer;
 int last_produced, last_consumed;
 int quit_flag = 0;
 pthread_t* handles;
-pthread_mutex_t* bmutex;
-pthread_mutexattr_t bmutex_attr;
-pthread_cond_t cond_produced = PTHREAD_COND_INITIALIZER;
-pthread_cond_t cond_consumed = PTHREAD_COND_INITIALIZER;
-pthread_condattr_t condattr;
+sem_t* bmutex;
+sem_t cond_produced, cond_consumed;
 
 FILE* f;
 int P, K, N, L, nk;
@@ -36,10 +36,10 @@ int strlen_unicode(char* str){
 }
 
 void handle_alarm(){
-  pthread_mutex_lock(&bmutex[N]);
+  sem_wait(&bmutex[N]);
   quit_flag = 1;
-  pthread_cond_broadcast(&cond_produced);
-  pthread_mutex_unlock(&bmutex[N]);
+  SEM_BROADCAST(&cond_produced);
+  sem_post(&bmutex[N]);
 }
 
 void* produce(){
@@ -52,31 +52,31 @@ void* produce(){
 
     // obliczanie miejsca i oczekiwanie
 
-    pthread_mutex_lock(&bmutex[N]);
+    sem_wait(&bmutex[N]);
     if( print_all ) printf("PRODUCTION: lock buffer_pos\n");
     while( last_produced - last_consumed == N ){ // pelne
       if( print_all ) printf("PRODUCTION: full\n");
-      pthread_cond_wait(&cond_consumed, &bmutex[N]);
+      SEM_COND_WAIT(&cond_consumed, &bmutex[N]);
     }
     last_produced = last_produced+1;
     int buffer_pos = last_produced%N;
-    pthread_mutex_lock(&bmutex[buffer_pos]);
-    pthread_cond_signal(&cond_produced);
+    sem_wait(&bmutex[buffer_pos]);
+    sem_post(&cond_produced);
     if( print_all ) printf("PRODUCTION: index=%d\n", buffer_pos);
     if( print_all ) printf("PRODUCTION: unlock buffer_pos\n");
-    pthread_mutex_unlock(&bmutex[N]);
+    sem_post(&bmutex[N]);
 
     // dzialanie
 
     buffer[buffer_pos] = malloc(sizeof(char)*1024);
     if( fgets(buffer[buffer_pos], 1024, f) == NULL){
       quit_flag = 1;
-      pthread_cond_broadcast(&cond_produced);
-      pthread_mutex_unlock(&bmutex[buffer_pos]);
+      SEM_BROADCAST(&cond_produced);
+      sem_post(&bmutex[buffer_pos]);
       if( print_all ) printf("PRODUCTION: quitting\n");
       pthread_exit(0);
     }
-    pthread_mutex_unlock(&bmutex[buffer_pos]);
+    sem_post(&bmutex[buffer_pos]);
   }
 
   return NULL;
@@ -88,24 +88,24 @@ void* consume(){
 
     // obliczanie miejsca w buforze i oczekiwanie
     
-    pthread_mutex_lock(&bmutex[N]);
+    sem_wait(&bmutex[N]);
     if( print_all ) printf("CONSUMPTION: lock buffer_pos\n");
     while( last_consumed == last_produced ){ // puste
       if( print_all ) printf("CONSUMPTION: empty\n");
       if( quit_flag ){
         if( print_all ) printf("CONSUMPTION: quitting\n");
-        pthread_mutex_unlock(&bmutex[N]);
+        sem_post(&bmutex[N]);
         pthread_exit(0);
       }
-      pthread_cond_wait(&cond_produced, &bmutex[N]);
+      SEM_COND_WAIT(&cond_produced, &bmutex[N]);
     }
     last_consumed = last_consumed+1;
     int buffer_pos = last_consumed%N;
-    pthread_mutex_lock(&bmutex[buffer_pos]);
-    pthread_cond_signal(&cond_consumed);
+    sem_wait(&bmutex[buffer_pos]);
+    sem_post(&cond_consumed);
     if( print_all ) printf("CONSUMPTION: index=%d\n", buffer_pos);
     if( print_all ) printf("CONSUMPTION: unlock buffer_pos\n");
-    pthread_mutex_unlock(&bmutex[N]);
+    sem_post(&bmutex[N]);
 
     // dzialanie
 
@@ -117,7 +117,7 @@ void* consume(){
     }
 
     free(buffer[buffer_pos]);
-    pthread_mutex_unlock(&bmutex[buffer_pos]);
+    sem_post(&bmutex[buffer_pos]);
   }
   return NULL;
 }
@@ -146,10 +146,10 @@ int main(int argc, char** argv){
   buffer = calloc(sizeof(char*), N);
   bmutex = calloc(sizeof(pthread_mutex_t), N+1);
   for(int i = 0; i < N+1; i++){
-    pthread_mutex_init(&bmutex[i], &bmutex_attr);
+    sem_init(&bmutex[i], 1, 1);
   }
-  pthread_condattr_init(&condattr);
-
+  sem_init(&cond_produced, 1, 0);
+  sem_init(&cond_consumed, 1, 0);
   
   handles = malloc((P+K)*sizeof(pthread_t));
 
@@ -169,9 +169,10 @@ int main(int argc, char** argv){
   }
   fclose(f);
 
-  pthread_condattr_destroy(&condattr);
+  sem_destroy(&cond_produced);
+  sem_destroy(&cond_consumed);
   for(int i = 0; i < N+1; i++)
-    pthread_mutex_destroy(&bmutex[i]);
+    sem_destroy(&bmutex[i]);
 
   free(handles);
   free(buffer);
