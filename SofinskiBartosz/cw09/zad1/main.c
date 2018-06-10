@@ -5,6 +5,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+
 #define LEAVE(msg) { printf(msg); exit(1); }
 #define FAIL(msg) { perror(msg); exit(2); }
 
@@ -27,7 +28,7 @@ int print_all;
 int strlen_unicode(char* str){
   int v = 0;
   while( *str != '\n' && *str != 0 ){
-    if(( 0xa0 & *str) != 0x80 ){
+    if(( 0xC0 & *str) != 0x80 ){
       v += 1;
     }
     str += 1;
@@ -46,16 +47,20 @@ void* produce(){
 
   while(1){
 
-    if( quit_flag ){
-      pthread_exit(0);
-    }
-
     // obliczanie miejsca i oczekiwanie
 
     pthread_mutex_lock(&bmutex[N]);
+    if( quit_flag ){
+      pthread_mutex_unlock(&bmutex[N]);
+      pthread_exit(0);
+    }
     if( print_all ) printf("PRODUCTION: lock buffer_pos\n");
     while( last_produced - last_consumed == N ){ // pelne
       if( print_all ) printf("PRODUCTION: full\n");
+      if( quit_flag ){
+        pthread_mutex_unlock(&bmutex[N]);
+        pthread_exit(0);
+      }
       pthread_cond_wait(&cond_consumed, &bmutex[N]);
     }
     last_produced = last_produced+1;
@@ -113,7 +118,7 @@ void* consume(){
     if( ( search_mode == '>' && len > L ) || 
         ( search_mode == '=' && len == L ) || 
         ( search_mode == '<' && len < L )){
-      printf("%d: %s\n", buffer_pos, buffer[buffer_pos]);
+      printf("%d: %s", buffer_pos, buffer[buffer_pos]);
     }
 
     free(buffer[buffer_pos]);

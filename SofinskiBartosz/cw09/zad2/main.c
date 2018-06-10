@@ -5,11 +5,12 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+
 #include <semaphore.h>
 
 #define LEAVE(msg) { printf(msg); exit(1); }
 #define FAIL(msg) { perror(msg); exit(2); }
-#define SEM_BROADCAST(x) { for(int i = 0; i < K ; i++) sem_post(x); }
+#define SEM_BROADCAST(x) { for(int i = 0; i < K; i++) sem_post(x); }
 #define SEM_COND_WAIT(a,b) { sem_post(b); sem_wait(a); sem_wait(b); }
 
 char** buffer;
@@ -27,7 +28,7 @@ int print_all;
 int strlen_unicode(char* str){
   int v = 0;
   while( *str != '\n' && *str != 0 ){
-    if(( 0xa0 & *str) != 0x80 ){
+    if(( 0xC0 & *str) != 0x80 ){
       v += 1;
     }
     str += 1;
@@ -46,16 +47,20 @@ void* produce(){
 
   while(1){
 
-    if( quit_flag ){
-      pthread_exit(0);
-    }
-
     // obliczanie miejsca i oczekiwanie
 
     sem_wait(&bmutex[N]);
+    if( quit_flag ){
+      sem_post(&bmutex[N]);
+      pthread_exit(0);
+    }
     if( print_all ) printf("PRODUCTION: lock buffer_pos\n");
     while( last_produced - last_consumed == N ){ // pelne
       if( print_all ) printf("PRODUCTION: full\n");
+      if( quit_flag ){
+        sem_post(&bmutex[N]);
+        pthread_exit(0);
+      }
       SEM_COND_WAIT(&cond_consumed, &bmutex[N]);
     }
     last_produced = last_produced+1;
@@ -71,7 +76,6 @@ void* produce(){
     buffer[buffer_pos] = malloc(sizeof(char)*1024);
     if( fgets(buffer[buffer_pos], 1024, f) == NULL){
       quit_flag = 1;
-      SEM_BROADCAST(&cond_produced);
       sem_post(&bmutex[buffer_pos]);
       if( print_all ) printf("PRODUCTION: quitting\n");
       pthread_exit(0);
@@ -95,6 +99,7 @@ void* consume(){
       if( quit_flag ){
         if( print_all ) printf("CONSUMPTION: quitting\n");
         sem_post(&bmutex[N]);
+        SEM_BROADCAST(&cond_consumed);
         pthread_exit(0);
       }
       SEM_COND_WAIT(&cond_produced, &bmutex[N]);
@@ -113,7 +118,7 @@ void* consume(){
     if( ( search_mode == '>' && len > L ) || 
         ( search_mode == '=' && len == L ) || 
         ( search_mode == '<' && len < L )){
-      printf("%d: %s\n", buffer_pos, buffer[buffer_pos]);
+      printf("%d: %s", buffer_pos, buffer[buffer_pos]);
     }
 
     free(buffer[buffer_pos]);
